@@ -1,0 +1,104 @@
+"","email_subject","date_email_sent","sales_amount","X","group","group_code","before_march","day_of_week","emails_sent","number_opens","number_clicks","number_unsub","number_orders","open_to_click_rate","opens_rate","clicks_rate","unsub_rate","orders_rate"
+"1","ACT NOW: SPRING BESTSELLERS FLYING OFF THE SHELVES!","2004-03-08",48922.77,45,"Alarming Approach","Group B0","False","0 - Monday",30,1,1,1,1,1,0.0333333333333333,0.0333333333333333,0.0333333333333333,0.0333333333333333
+"2","ACT NOW: SPRING BESTSELLERS FLYING OFF THE SHELVES!","2004-03-10",0,19,"Alarming Approach","Group B2","False","2 - Wednesday",30,1,1,1,0,1,0.0333333333333333,0.0333333333333333,0.0333333333333333,0
+"3","ACT NOW: SPRING BESTSELLERS FLYING OFF THE SHELVES!","2004-03-12",0,71,"Alarming Approach","Group B4","False","4 - Friday",30,1,0,2,0,0,0.0333333333333333,0,0.0666666666666667,0
+"4","APRIL ESSENTIALS: DON’T LET THESE SELL OUT!","2004-04-12",0,55,"Alarming Approach","Group B0","False","0 - Monday",25,5,0,0,0,0,0.2,0,0,0
+"5","APRIL ESSENTIALS: DON’T LET THESE SELL OUT!","2004-04-14",0,29,"Alarming Approach","Group B2","False","2 - Wednesday",25,1,1,0,0,1,0.04,0.04,0,0
+"6","APRIL ESSENTIALS: DON’T LET THESE SELL OUT!","2004-04-16",0,81,"Alarming Approach","Group B4","False","4 - Friday",26,1,1,2,0,1,0.0384615384615385,0.0384615384615385,0.0769230769230769,0
+"7","April Showers Bring Bestsellers—Stock Up Now!","2004-04-05",0,52,"Conversational Approach","Group A0","False","0 - Monday",32,3,1,1,0,0.333333333333333,0.09375,0.03125,0.03125,0
+"8","April Showers Bring Bestsellers—Stock Up Now!","2004-04-07",17114.43,26,"Conversational Approach","Group A2","False","2 - Wednesday",31,2,1,0,2,0.5,0.0645161290322581,0.032258064516129,0,0.0645161290322581
+"9","April Showers Bring Bestsellers—Stock Up Now!","2004-04-07",31329.56,26,"Conversational Approach","Group A2","False","2 - Wednesday",31,2,1,0,2,0.5,0.0645161290322581,0.032258064516129,0,0.0645161290322581
+"10","April Showers Bring Bestsellers—Stock Up Now!","2004-04-09",39341.23,78,"Conversational Approach","Group A4","False","4 - Friday",33,2,1,0,2,0.5,0.0606060606060606,0.0303030303030303,0,0.0606060606060606
+"11","April Showers Bring Bestsellers—Stock Up Now!","2004-04-09",17813.4,78,"Conversational Approach","Group A4","False","4 - Friday",33,2,1,0,2,0.5,0.0606060606060606,0.0303030303030303,0,0.0606060606060606
+"12","BACK BY POPULAR DEMAND: ORDER NOW BEFORE IT’S GONE AGAIN!","2004-04-26",0,59,"Alarming Approach","Group B0","False","0 - Monday",24,3,2,0,0,0.666666666666667,0.125,0.0833333333333333,0,0
+"13","BACK BY POPULAR DEMAND: ORDER NOW BEFORE IT’S GONE AGAIN!","2004-04-28",0,33,"Alarming Approach","Group B2","False","2 - Wednesday",24,1,1,1,0,1,0.0416666666666667,0.0416666666666667,0.0416666666666667,0
+"14","BACK BY POPULAR DEMAND: ORDER NOW BEFORE IT’S GONE AGAIN!","2004-04-30",0,85,"Alarming Approach","Group B4","False","4 - Friday",24,1,1,1,0,1,0.0416666666666667,0.0416666666666667,0.0416666666666667,0
+"15","DON’T MISS OUT: MID-MARCH’S HOTTEST MODELS!","2004-03-15",15330.7,47,"Alarming Approach","Group B0","False","0 - Monday",29,6,2,2,1,0.333333333333333,0.206896551724138,0.0689655172413793,0.0689655172413793,0.0344827586206897
+"16","DON’T MISS OUT: MID-MARCH’S HOTTEST MODELS!","2004-03-17",0,21,"Alarming Approach","Group B2","False","2 - Wednesday",29,1,0,1,0,0,0.0344827586206897,0,0.0344827586206897,0
+"17","DON’T MISS OUT: MID-MARCH’S HOTTEST MODELS!","2004-03-19",0,73,"Alarming Approach","Group B4","False","4 - Friday",28,1,0,0,0,0,0.0357142857142857,0,0,0
+"18","DON’T WAIT: START THE YEAR WITH THESE HOT PICKS!","2004-01-14",0,3,"Alarming Approach","Group B","True","2 - Wednesday",101,28,3,0,0,0.107142857142857,0.277227722772277,0.0297029702970297,0,0
+"19","End of March Favorites: Your Customers Will Love These","2004-03-29",0,50,"Conversational Approach","Group A0","False","0 - Monday",32,2,2,0,0,1,0.0625,0.0625,0,0
+"20","End of March Favorites: Your Customers Will Love These","2004-03-31",31302.5,24,"Conversational Approach","Group A2","False","2 - Wednesday",31,4,1,0,1,0.25,0.129032258064516,0.032258064516129,0,0.032258064516129
+"21","End of March Favorites: Your Customers Will Love These","2004-04-02",7287.24,76,"Conversational Approach","Group A4","False","4 - Friday",33,4,2,0,1,0.5,0.121212121212121,0.0606060606060606,0,0.0303030303030303
+"22","End of May: Perfect Picks for Summer Ahead","2004-05-24",0,66,"Conversational Approach","Group A0","False","0 - Monday",30,3,1,0,0,0.333333333333333,0.1,0.0333333333333333,0,0
+"23","End of May: Perfect Picks for Summer Ahead","2004-05-26",27931.21,40,"Conversational Approach","Group A2","False","2 - Wednesday",29,3,2,0,1,0.666666666666667,0.103448275862069,0.0689655172413793,0,0.0344827586206897
+"24","End of May: Perfect Picks for Summer Ahead","2004-05-28",0,92,"Conversational Approach","Group A4","False","4 - Friday",31,1,1,0,0,1,0.032258064516129,0.032258064516129,0,0
+"25","February Favorites: Check Out Our Bestsellers This Month","2004-02-25",25872.22,14,"Conversational Approach","Group A","True","2 - Wednesday",102,12,5,1,1,0.416666666666667,0.117647058823529,0.0490196078431373,0.00980392156862745,0.00980392156862745
+"26","FINAL CALL: VALENTINE’S MODELS ALMOST GONE!","2004-02-11",38784.47,11,"Alarming Approach","Group B","True","2 - Wednesday",98,23,4,0,1,0.173913043478261,0.23469387755102,0.0408163265306122,0,0.0102040816326531
+"27","Fresh Finds for the New Season—See What’s in Stock","2004-03-22",0,48,"Conversational Approach","Group A0","False","0 - Monday",32,2,2,0,0,1,0.0625,0.0625,0,0
+"28","Fresh Finds for the New Season—See What’s in Stock","2004-03-24",0,22,"Conversational Approach","Group A2","False","2 - Wednesday",32,3,1,1,0,0.333333333333333,0.09375,0.03125,0.03125,0
+"29","Fresh Finds for the New Season—See What’s in Stock","2004-03-26",8722.12,74,"Conversational Approach","Group A4","False","4 - Friday",33,1,0,0,1,0,0.0303030303030303,0,0,0.0303030303030303
+"30","Fresh Start, Fresh Models—Your Store Will Love These","2004-01-14",51172.65,2,"Conversational Approach","Group A","True","2 - Wednesday",102,16,5,0,2,0.3125,0.156862745098039,0.0490196078431373,0,0.0196078431372549
+"31","Fresh Start, Fresh Models—Your Store Will Love These","2004-01-14",65165.17,2,"Conversational Approach","Group A","True","2 - Wednesday",102,16,5,0,2,0.3125,0.156862745098039,0.0490196078431373,0,0.0196078431372549
+"32","Last-Minute Valentine’s Day Picks for Your Store","2004-02-11",0,10,"Conversational Approach","Group A","True","2 - Wednesday",102,11,8,0,0,0.727272727272727,0.107843137254902,0.0784313725490196,0,0
+"33","Let’s Celebrate Moms and Dads with These Collectibles","2004-05-03",0,60,"Conversational Approach","Group A0","False","0 - Monday",30,3,3,0,0,1,0.1,0.1,0,0
+"34","Let’s Celebrate Moms and Dads with These Collectibles","2004-05-05",14380.92,34,"Conversational Approach","Group A2","False","2 - Wednesday",29,2,0,0,2,0,0.0689655172413793,0,0,0.0689655172413793
+"35","Let’s Celebrate Moms and Dads with These Collectibles","2004-05-05",31018.23,34,"Conversational Approach","Group A2","False","2 - Wednesday",29,2,0,0,2,0,0.0689655172413793,0,0,0.0689655172413793
+"36","Let’s Celebrate Moms and Dads with These Collectibles","2004-05-07",45357.66,86,"Conversational Approach","Group A4","False","4 - Friday",32,1,0,1,1,0,0.03125,0,0.03125,0.03125
+"37","LIMITED EDITION MODELS FOR APRIL: ORDER FAST!","2004-04-05",24804.34,53,"Alarming Approach","Group B0","False","0 - Monday",26,5,0,1,1,0,0.192307692307692,0,0.0384615384615385,0.0384615384615385
+"38","LIMITED EDITION MODELS FOR APRIL: ORDER FAST!","2004-04-07",0,27,"Alarming Approach","Group B2","False","2 - Wednesday",26,3,0,1,0,0,0.115384615384615,0,0.0384615384615385,0
+"39","LIMITED EDITION MODELS FOR APRIL: ORDER FAST!","2004-04-09",0,79,"Alarming Approach","Group B4","False","4 - Friday",27,1,1,1,0,1,0.037037037037037,0.037037037037037,0.037037037037037,0
+"40","LIMITED SUPPLY: FATHER’S DAY BESTSELLERS IN STOCK NOW!","2004-05-10",48472.24,63,"Alarming Approach","Group B0","False","0 - Monday",24,6,2,0,1,0.333333333333333,0.25,0.0833333333333333,0,0.0416666666666667
+"41","LIMITED SUPPLY: FATHER’S DAY BESTSELLERS IN STOCK NOW!","2004-05-12",0,37,"Alarming Approach","Group B2","False","2 - Wednesday",22,2,0,1,0,0,0.0909090909090909,0,0.0454545454545455,0
+"42","LIMITED SUPPLY: FATHER’S DAY BESTSELLERS IN STOCK NOW!","2004-05-14",0,89,"Alarming Approach","Group B4","False","4 - Friday",22,3,0,1,0,0,0.136363636363636,0,0.0454545454545455,0
+"43","Mid-January Refresh: Perfect Additions to Your Inventory","2004-01-21",8477.22,4,"Conversational Approach","Group A","True","2 - Wednesday",102,25,4,0,1,0.16,0.245098039215686,0.0392156862745098,0,0.00980392156862745
+"44","Mid-March Marvels: Check Out These Customer Favorites","2004-03-15",0,46,"Conversational Approach","Group A0","False","0 - Monday",32,2,2,0,0,1,0.0625,0.0625,0,0
+"45","Mid-March Marvels: Check Out These Customer Favorites","2004-03-17",0,20,"Conversational Approach","Group A2","False","2 - Wednesday",33,0,0,1,0,0,0,0,0.0303030303030303,0
+"46","Mid-March Marvels: Check Out These Customer Favorites","2004-03-19",26906.68,72,"Conversational Approach","Group A4","False","4 - Friday",33,1,0,0,1,0,0.0303030303030303,0,0,0.0303030303030303
+"47","MOTHER’S & FATHER’S DAY ITEMS: DON’T WAIT TO STOCK UP!","2004-05-03",0,61,"Alarming Approach","Group B0","False","0 - Monday",24,8,2,0,0,0.25,0.333333333333333,0.0833333333333333,0,0
+"48","MOTHER’S & FATHER’S DAY ITEMS: DON’T WAIT TO STOCK UP!","2004-05-05",0,35,"Alarming Approach","Group B2","False","2 - Wednesday",23,0,0,1,0,0,0,0,0.0434782608695652,0
+"49","MOTHER’S & FATHER’S DAY ITEMS: DON’T WAIT TO STOCK UP!","2004-05-07",0,87,"Alarming Approach","Group B4","False","4 - Friday",23,2,1,1,0,0.5,0.0869565217391304,0.0434782608695652,0.0434782608695652,0
+"50","NEW ARRIVALS: DON’T MISS THESE POST-VALENTINE’S FAVORITES!","2004-02-18",50432.55,13,"Alarming Approach","Group B","True","2 - Wednesday",98,42,3,3,3,0.0714285714285714,0.428571428571429,0.0306122448979592,0.0306122448979592,0.0306122448979592
+"51","NEW ARRIVALS: DON’T MISS THESE POST-VALENTINE’S FAVORITES!","2004-02-18",20178.13,13,"Alarming Approach","Group B","True","2 - Wednesday",98,42,3,3,3,0.0714285714285714,0.428571428571429,0.0306122448979592,0.0306122448979592,0.0306122448979592
+"52","NEW ARRIVALS: DON’T MISS THESE POST-VALENTINE’S FAVORITES!","2004-02-18",49637.57,13,"Alarming Approach","Group B","True","2 - Wednesday",98,42,3,3,3,0.0714285714285714,0.428571428571429,0.0306122448979592,0.0306122448979592,0.0306122448979592
+"53","NEW YEAR’S BESTSELLERS: LIMITED STOCK AVAILABLE!","2004-01-07",23889.32,1,"Alarming Approach","Group B","True","2 - Wednesday",102,14,3,1,1,0.214285714285714,0.137254901960784,0.0294117647058824,0.00980392156862745,0.00980392156862745
+"54","SELL FAST: JANUARY’S MOST POPULAR MODELS!","2004-01-21",24995.47,5,"Alarming Approach","Group B","True","2 - Wednesday",101,40,5,1,1,0.125,0.396039603960396,0.0495049504950495,0.0099009900990099,0.0099009900990099
+"55","SELL OUT ALERT: VALENTINE’S DAY MUST-HAVES!","2004-02-04",16118.48,9,"Alarming Approach","Group B","True","2 - Wednesday",99,17,6,1,1,0.352941176470588,0.171717171717172,0.0606060606060606,0.0101010101010101,0.0101010101010101
+"56","SELL OUT WARNING: MARCH BESTSELLERS RUNNING LOW!","2004-03-29",0,51,"Alarming Approach","Group B0","False","0 - Monday",26,4,0,0,0,0,0.153846153846154,0,0,0
+"57","SELL OUT WARNING: MARCH BESTSELLERS RUNNING LOW!","2004-03-31",0,25,"Alarming Approach","Group B2","False","2 - Wednesday",27,1,1,1,0,1,0.037037037037037,0.037037037037037,0.037037037037037,0
+"58","SELL OUT WARNING: MARCH BESTSELLERS RUNNING LOW!","2004-04-02",0,77,"Alarming Approach","Group B4","False","4 - Friday",27,0,0,0,0,0,0,0,0,0
+"59","Spring is Coming! Refresh Your Shelves with These Picks","2004-03-01",0,42,"Conversational Approach","Group A0","False","0 - Monday",33,1,1,0,0,1,0.0303030303030303,0.0303030303030303,0,0
+"60","Spring is Coming! Refresh Your Shelves with These Picks","2004-03-03",0,16,"Conversational Approach","Group A2","False","2 - Wednesday",33,3,1,0,0,0.333333333333333,0.0909090909090909,0.0303030303030303,0,0
+"61","Spring is Coming! Refresh Your Shelves with These Picks","2004-03-05",0,68,"Conversational Approach","Group A4","False","4 - Friday",33,1,1,0,0,1,0.0303030303030303,0.0303030303030303,0,0
+"62","SPRING MODELS JUST IN: ORDER BEFORE THEY’RE GONE!","2004-03-01",46802.27,43,"Alarming Approach","Group B0","False","0 - Monday",31,2,1,1,1,0.5,0.0645161290322581,0.032258064516129,0.032258064516129,0.032258064516129
+"63","SPRING MODELS JUST IN: ORDER BEFORE THEY’RE GONE!","2004-03-03",0,17,"Alarming Approach","Group B2","False","2 - Wednesday",31,1,0,1,0,0,0.032258064516129,0,0.032258064516129,0
+"64","SPRING MODELS JUST IN: ORDER BEFORE THEY’RE GONE!","2004-03-05",0,69,"Alarming Approach","Group B4","False","4 - Friday",31,2,1,1,0,0.5,0.0645161290322581,0.032258064516129,0.032258064516129,0
+"65","SPRING RUSH: LIMITED STOCK ALERT—ORDER NOW!","2004-03-22",0,49,"Alarming Approach","Group B0","False","0 - Monday",27,5,0,1,0,0,0.185185185185185,0,0.037037037037037,0
+"66","SPRING RUSH: LIMITED STOCK ALERT—ORDER NOW!","2004-03-24",0,23,"Alarming Approach","Group B2","False","2 - Wednesday",28,2,1,1,0,0.5,0.0714285714285714,0.0357142857142857,0.0357142857142857,0
+"67","SPRING RUSH: LIMITED STOCK ALERT—ORDER NOW!","2004-03-26",0,75,"Alarming Approach","Group B4","False","4 - Friday",28,1,1,1,0,1,0.0357142857142857,0.0357142857142857,0.0357142857142857,0
+"68","SUMMER IS HERE: LAST CHANCE FOR MAY’S HOTTEST ITEMS!","2004-05-24",0,67,"Alarming Approach","Group B0","False","0 - Monday",24,6,2,1,0,0.333333333333333,0.25,0.0833333333333333,0.0416666666666667,0
+"69","SUMMER IS HERE: LAST CHANCE FOR MAY’S HOTTEST ITEMS!","2004-05-26",0,41,"Alarming Approach","Group B2","False","2 - Wednesday",21,3,1,1,0,0.333333333333333,0.142857142857143,0.0476190476190476,0.0476190476190476,0
+"70","SUMMER IS HERE: LAST CHANCE FOR MAY’S HOTTEST ITEMS!","2004-05-28",0,93,"Alarming Approach","Group B4","False","4 - Friday",21,2,1,1,0,0.5,0.0952380952380952,0.0476190476190476,0.0476190476190476,0
+"71","TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!","2004-02-25",0,15,"Alarming Approach","Group B","True","2 - Wednesday",95,25,5,1,0,0.2,0.263157894736842,0.0526315789473684,0.0105263157894737,0
+"72","TIME-SENSITIVE: THIS WEEK’S MUST-HAVE MODELS!","2004-05-17",0,65,"Alarming Approach","Group B0","False","0 - Monday",24,4,1,0,0,0.25,0.166666666666667,0.0416666666666667,0,0
+"73","TIME-SENSITIVE: THIS WEEK’S MUST-HAVE MODELS!","2004-05-19",0,39,"Alarming Approach","Group B2","False","2 - Wednesday",21,1,1,0,0,1,0.0476190476190476,0.0476190476190476,0,0
+"74","TIME-SENSITIVE: THIS WEEK’S MUST-HAVE MODELS!","2004-05-21",0,91,"Alarming Approach","Group B4","False","4 - Friday",21,1,1,0,0,1,0.0476190476190476,0.0476190476190476,0,0
+"75","URGENT: THESE MODELS ARE FLYING OFF THE SHELVES!","2004-01-28",37850.08,7,"Alarming Approach","Group B","True","2 - Wednesday",100,27,6,1,2,0.222222222222222,0.27,0.06,0.01,0.02
+"76","URGENT: THESE MODELS ARE FLYING OFF THE SHELVES!","2004-01-28",5759.42,7,"Alarming Approach","Group B","True","2 - Wednesday",100,27,6,1,2,0.222222222222222,0.27,0.06,0.01,0.02
+"77","URGENT: THIS WEEK’S TOP-SELLING MODELS!","2004-04-19",0,57,"Alarming Approach","Group B0","False","0 - Monday",25,7,1,1,0,0.142857142857143,0.28,0.04,0.04,0
+"78","URGENT: THIS WEEK’S TOP-SELLING MODELS!","2004-04-21",0,31,"Alarming Approach","Group B2","False","2 - Wednesday",25,1,0,1,0,0,0.04,0,0.04,0
+"79","URGENT: THIS WEEK’S TOP-SELLING MODELS!","2004-04-23",0,83,"Alarming Approach","Group B4","False","4 - Friday",24,3,0,0,0,0,0.125,0,0,0
+"80","Valentine’s Day is Coming—Add a Little Love to Your Store","2004-02-04",24219.59,8,"Conversational Approach","Group A","True","2 - Wednesday",102,10,5,0,1,0.5,0.0980392156862745,0.0490196078431373,0,0.00980392156862745
+"81","Weekly Inspiration: Models Perfect for Father’s Day","2004-05-10",0,62,"Conversational Approach","Group A0","False","0 - Monday",30,1,1,0,0,1,0.0333333333333333,0.0333333333333333,0,0
+"82","Weekly Inspiration: Models Perfect for Father’s Day","2004-05-12",0,36,"Conversational Approach","Group A2","False","2 - Wednesday",29,1,1,0,0,1,0.0344827586206897,0.0344827586206897,0,0
+"83","Weekly Inspiration: Models Perfect for Father’s Day","2004-05-14",27987.07,88,"Conversational Approach","Group A4","False","4 - Friday",31,4,2,0,1,0.5,0.129032258064516,0.0645161290322581,0,0.032258064516129
+"84","Weekly Spotlight: What Your Customers Will Love This Spring","2004-03-08",0,44,"Conversational Approach","Group A0","False","0 - Monday",33,1,1,1,0,1,0.0303030303030303,0.0303030303030303,0.0303030303030303,0
+"85","Weekly Spotlight: What Your Customers Will Love This Spring","2004-03-10",21782.7,18,"Conversational Approach","Group A2","False","2 - Wednesday",33,1,1,0,1,1,0.0303030303030303,0.0303030303030303,0,0.0303030303030303
+"86","Weekly Spotlight: What Your Customers Will Love This Spring","2004-03-12",37266.49,70,"Conversational Approach","Group A4","False","4 - Friday",33,1,1,0,1,1,0.0303030303030303,0.0303030303030303,0,0.0303030303030303
+"87","Weekly Update: Must-Have Models for April Events","2004-04-12",0,54,"Conversational Approach","Group A0","False","0 - Monday",31,2,1,0,0,0.5,0.0645161290322581,0.032258064516129,0,0
+"88","Weekly Update: Must-Have Models for April Events","2004-04-14",0,28,"Conversational Approach","Group A2","False","2 - Wednesday",31,2,2,1,0,1,0.0645161290322581,0.0645161290322581,0.032258064516129,0
+"89","Weekly Update: Must-Have Models for April Events","2004-04-16",1698.78,80,"Conversational Approach","Group A4","False","4 - Friday",33,1,0,0,1,0,0.0303030303030303,0,0,0.0303030303030303
+"90","Welcome to 2004! Let’s Start the Year with a Bang","2004-01-07",50490.64,0,"Conversational Approach","Group A","True","2 - Wednesday",102,23,7,0,1,0.304347826086957,0.225490196078431,0.0686274509803922,0,0.00980392156862745
+"91","What’s Hot This Week? Find Out Here!","2004-04-19",0,56,"Conversational Approach","Group A0","False","0 - Monday",31,5,2,1,0,0.4,0.161290322580645,0.0645161290322581,0.032258064516129,0
+"92","What’s Hot This Week? Find Out Here!","2004-04-21",7129,30,"Conversational Approach","Group A2","False","2 - Wednesday",30,2,2,1,1,1,0.0666666666666667,0.0666666666666667,0.0333333333333333,0.0333333333333333
+"93","What’s Hot This Week? Find Out Here!","2004-04-23",28327.64,82,"Conversational Approach","Group A4","False","4 - Friday",33,1,1,0,1,1,0.0303030303030303,0.0303030303030303,0,0.0303030303030303
+"94","What’s Trending After Valentine’s? We’ve Got You Covered","2004-02-18",61617.01,12,"Conversational Approach","Group A","True","2 - Wednesday",102,21,4,0,2,0.19047619047619,0.205882352941176,0.0392156862745098,0,0.0196078431372549
+"95","What’s Trending After Valentine’s? We’ve Got You Covered","2004-02-18",18800.09,12,"Conversational Approach","Group A","True","2 - Wednesday",102,21,4,0,2,0.19047619047619,0.205882352941176,0.0392156862745098,0,0.0196078431372549
+"96","What’s Trending This Week? See Our Latest Recommendations","2004-05-17",0,64,"Conversational Approach","Group A0","False","0 - Monday",30,1,1,0,0,1,0.0333333333333333,0.0333333333333333,0,0
+"97","What’s Trending This Week? See Our Latest Recommendations","2004-05-19",0,38,"Conversational Approach","Group A2","False","2 - Wednesday",29,1,1,0,0,1,0.0344827586206897,0.0344827586206897,0,0
+"98","What’s Trending This Week? See Our Latest Recommendations","2004-05-21",0,90,"Conversational Approach","Group A4","False","4 - Friday",31,2,2,0,0,1,0.0645161290322581,0.0645161290322581,0,0
+"99","Your April Favorites—Back in Stock!","2004-04-26",0,58,"Conversational Approach","Group A0","False","0 - Monday",30,3,3,0,0,1,0.1,0.1,0,0
+"100","Your April Favorites—Back in Stock!","2004-04-28",0,32,"Conversational Approach","Group A2","False","2 - Wednesday",29,1,1,0,0,1,0.0344827586206897,0.0344827586206897,0,0
+"101","Your April Favorites—Back in Stock!","2004-04-30",41317.75,84,"Conversational Approach","Group A4","False","4 - Friday",33,5,1,1,2,0.2,0.151515151515152,0.0303030303030303,0.0303030303030303,0.0606060606060606
+"102","Your April Favorites—Back in Stock!","2004-04-30",36973.31,84,"Conversational Approach","Group A4","False","4 - Friday",33,5,1,1,2,0.2,0.151515151515152,0.0303030303030303,0.0303030303030303,0.0606060606060606
+"103","Your Weekly Check-In: What’s Missing from Your Shelves?","2004-01-28",0,6,"Conversational Approach","Group A","True","2 - Wednesday",102,29,10,0,0,0.344827586206897,0.284313725490196,0.0980392156862745,0,0

@@ -1,0 +1,445 @@
+---
+title: "Profit Projection for Timeless Transport Models"
+output: html_document
+date: "2025-03-18"
+---
+
+# Summary
+
+Timeless Transport Models wants to know the expected profit going into the second half of 2005. Using production and sales data to:
+
+1)  Estimate the unit production costs using linear regression.
+
+2)  Find the average profit per unit for each product line.
+
+3)  Forecast of monthly sales from June 2005 to December 2005 using time series modeling.
+
+4)  Compute expected profit calculation to find the total profit.
+
+Findings:
+
+TImeless Transport Models is expected to make \$1,113,052.04 in profit from June 2005 to December 2005.
+
+# Classic Cars Sales Forecast
+
+```{r}
+library(tidyverse)
+sales <- read.csv("data/sales_data_sample.csv")
+
+# Add an order_month column to sales that is the month the order took place. 
+sales$order_month = floor_date(as.Date(sales$ORDERDATE, "%m/%d/%Y"), unit="month")
+
+# Filter the sales data for Classic Cars product line
+cc_sales <- sales[sales$PRODUCTLINE == "Classic Cars",]
+
+# Summarize the total quantity ordered for each month
+cc_monthly_sales <- cc_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+cc_ts <- ts(cc_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+library(forecast)
+#Seasonal Naive method to forecast monthly sales
+# cc_forecast <- forecast(snaive(cc_ts), h = 7)
+# print(cc_forecast)
+# autoplot(cc_forecast)
+
+snaive(cc_ts, 7)
+autoplot(snaive(cc_ts, 7))
+```
+
+# Ships Sales Forecast
+
+```{r}
+# Filter the sales data for the Ships product line
+ships_sales <- sales[sales$PRODUCTLINE == "Ships",]
+
+# Summarize the total quantity ordered for each month
+ships_monthly_sales <- ships_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+ships_ts <- ts(ships_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+#Seasonal Naive method to forecast monthly sales
+snaive(ships_ts, 13)
+autoplot(snaive(ships_ts, 13))
+
+```
+
+# Motorcycles Sales Forecast
+
+```{r}
+# Filter the sales data for the Motorcycles product line
+motorcycles_sales <- sales[sales$PRODUCTLINE == "Motorcycles",]
+
+# Summarize the total quantity ordered for each month
+motorcycles_monthly_sales <- motorcycles_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+motorcycles_ts <- ts(motorcycles_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+#Seasonal Naive method to forecast monthly sales
+snaive(motorcycles_ts, 9)
+autoplot(snaive(motorcycles_ts, 9))
+```
+
+# Trucks and Buses Sales Forecast
+
+```{r}
+# Filter the sales data for the Trucks and Buses product line
+tb_sales <- sales[sales$PRODUCTLINE == "Trucks and Buses",]
+
+# Summarize the total quantity ordered for each month
+tb_monthly_sales <- tb_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+tb_ts <- ts(tb_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+#Seasonal Naive method to forecast monthly sales
+snaive(tb_ts, 10)
+autoplot(snaive(tb_ts, 10))
+```
+
+# Planes Sales Forecast
+
+```{r}
+# Filter the sales data for the Planes product line
+planes_sales <- sales[sales$PRODUCTLINE == "Planes",]
+
+# Summarize the total quantity ordered for each month
+planes_monthly_sales <- planes_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+planes_ts <- ts(planes_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+#Seasonal Naive method to forecast monthly sales
+snaive(planes_ts, 13)
+autoplot(snaive(planes_ts, 13))
+```
+
+# Vintage Cars Sales Forecast
+
+```{r}
+# Filter the sales data for the Vintage Cars product line
+vc_sales <- sales[sales$PRODUCTLINE == "Vintage Cars",]
+
+# Summarize the total quantity ordered for each month
+vc_monthly_sales <- vc_sales %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+# Make the time series object
+vc_ts <- ts(vc_monthly_sales$qty, start=c(2003, 1), frequency=12)
+```
+
+```{r}
+#Seasonal Naive method to forecast monthly sales
+snaive(vc_ts, 7)
+autoplot(snaive(vc_ts, 7))
+```
+
+# Average Profit For Each Product Line
+
+Classic.Cars: 113.002 - 78.1465 = \$34.8555
+
+Ships: 83.02 - 15.3710 = \$67.649
+
+Motorcycles: 107.536 - 74.2201 = \$33.3159
+
+Trucks.and.Buses: 115.265 - 90.0914 = \$25.1736
+
+Planes: 94.887 - 76.8948 = \$17.9922
+
+Vintage.Cars: 94.036 - 60.3941 = \$33.6419
+
+# Total Forecast Units For Each Product Line
+
+Classic.Cars: 742 + 1263 + 1885 + 799 + 1786 + 3669 + 1006 = 11,150 units
+
+Ships: 303 + 320 + 102 + 545 + 76 + 303 + 294 = 1,943 units
+
+Motorcycles: 675 + 430 + 427 + 1403 + 268 + 377 + 429 = 4,009 units
+
+Trucks.and.Buses: 351 + 415 + 750 + 1052 + 569 + 337 + 356 = 3,830 units
+
+Planes: 681 + 175 + 270 + 883 + 496 + 383 + 414 = 3,303 units
+
+Vintage.Cars: 613 + 481 + 849 + 793 + 1385 + 2305 + 818 = 7,244 units
+
+# Expected Profit = Average Profit \* Total Forecast Units
+
+Classic.Cars: 31.583920 \* 11,150 = \$352,117.83
+
+Ships: 71.999960 \* 1,943 = \$139,895.92
+
+Motorcycles: 24.917439 \* 4,009 = \$99,894.01
+
+Trucks.and.Buses: 13.608588 \* 3,830 = \$52,120.924
+
+Planes: 7.788175 \* 3,303 = \$25,724.34
+
+Vintage.Cars: 23.656627 \* 7,244 = \$171,368.606
+
+# Total Profit
+
+Total Profit: $841,164.48
+
+# Analysis
+
+Although for the initial time series data we each used different methods to model projected sales, there was less clarity behind the multivariate nominal analysis model, and several projections for individual product lines had dramatically wider ranges. While it is likely that these estimates are more accurate and capture the statistical reality of the data more cleanly, due to the fairly consistent observed seasonal sales behavior in the data, for ease of recommendation and presentation, we chose to go with a seasonal naive model for the profit projections, as when explaining where the results came from (a simpler combination of seasonal trends and estimated growth trend), the impact can be focused on the data and what actions can be taken, rather than uncertainty regarding specific product lines.
+
+# Conclusion
+
+Our company's projected profit for the rest of the year can be broken down into the individual product lines to better understand product and factory performance. Over the next seven months we are projected to generate $841,164.48 USD in profit. Our application of multivariate nominal analysis may allow us a deeper view into product line uncertainty, as a more complex analysis reveals some product lines have far narrower projection ranges, and therefore are more likely to follow the seasonal and full trend. While solely focusing on these product lines is not recommended, it may serve to prioritize them in case of financial production limitations, and may indicate a need for more consistent or robust advertising around the more uncertain product lines in the pre holiday season. 
+
+Classic.Cars: $352,117.83
+
+Ships: $139,895.92
+
+Motorcycles: $99,894.01
+
+Trucks.and.Buses: $52,120.924
+
+Planes: $25,724.34
+
+Vintage.Cars: $171,368.60
+
+# Total Profit
+
+Total Profit: $841,164.48
+
+```{r}
+profit_data <- data.frame(
+  Category = c("Classic Cars", "Ships", "Motorcycles", "Trucks and Buses", "Planes", "Vintage Cars"),
+  Profit = c(352117.83, 139895.92, 99894.01, 52120.924, 25724.34, 171368.60)
+)
+
+total_profit <- sum(profit_data$Profit)
+
+ggplot(profit_data, aes(x = "", y = Profit, fill = Category)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(title = "Total Profit by Category",
+       y = "Profit ($)",
+       x = "") +f
+  geom_text(aes(x = "", y = total_profit + 50000, label = paste("Total Profit: $", format(total_profit, big.mark = ","))),
+            size = 6, fontface = "bold") +
+  theme(legend.position = "right")
+
+unit_data <- data.frame(
+  Category = c("Classic Cars", "Ships", "Motorcycles", "Trucks and Buses", "Planes", "Vintage Cars"),
+  Units_Sold = c(11150, 1943, 4009, 3830, 3303, 7244)
+)
+
+# Create a bar plot
+ggplot(unit_data, aes(x = Category, y = Units_Sold, fill = Category)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Total Units Sold by Category",
+       x = "Category",
+       y = "Units Sold") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+
+
+
+
+
+# Multivariate nominal analysis
+The following data shows some avenues for further investigations, notably the greater variation in projections between product lines when more factors are accounted for and a more robust regression model is applied
+
+```{r}
+sales <- read.csv("data/sales_data_sample.csv")
+
+sales$order_month = floor_date(as.Date(sales$ORDERDATE, "%m/%d/%Y"), unit="month")
+
+```
+
+Breaking up into product lines, Ships, Vintage Cars, Classic Cars, Planes, Trains, Motorcycles, Trucks and Busses
+And projecting sales by month, using additive seasonality
+SHIPS
+
+```{r}
+sales_ships <- sales[sales$PRODUCTLINE == 'Ships',]
+monthly_sales_ships <- sales_ships %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_ships_ts <- ts(monthly_sales_ships$qty, start=c(2003, 1), frequency=12)
+monthly_sales_ships_ts
+
+m_n_a_ships <- ets(monthly_sales_ships_ts, model = "MNA")
+m_n_a_ships
+
+forecast_ships <- forecast(m_n_a_ships, 7)
+
+autoplot(forecast(m_n_a_ships, 7)) 
+
+accuracy(m_n_a_ships)
+forecast_ships
+```
+
+VINTAGE CARS
+```{r}
+sales_vintage_cars <- sales[sales$PRODUCTLINE == 'Vintage Cars',]
+monthly_sales_vintage_cars <- sales_vintage_cars %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_vintage_cars_ts <- ts(monthly_sales_vintage_cars$qty, start=c(2003, 1), frequency=12)
+monthly_sales_vintage_cars_ts
+
+m_n_a_vintage_cars <- ets(monthly_sales_vintage_cars_ts, model = "MNA")
+m_n_a_vintage_cars
+
+forecast_vintage_cars <- forecast(m_n_a_vintage_cars, 7)
+
+autoplot(forecast(m_n_a_vintage_cars, 7)) 
+
+accuracy(m_n_a_vintage_cars)
+forecast_vintage_cars
+```
+
+
+CLASSIC CARS
+```{r}
+sales_classic_cars <- sales[sales$PRODUCTLINE == 'Classic Cars',]
+monthly_sales_classic_cars <- sales_classic_cars %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_classic_cars_ts <- ts(monthly_sales_classic_cars$qty, start=c(2003, 1), frequency=12)
+monthly_sales_classic_cars_ts
+
+m_n_a_classic_cars <- ets(monthly_sales_classic_cars_ts, model = "MNA")
+m_n_a_classic_cars
+
+forecast_classic_cars <- forecast(m_n_a_classic_cars, 7)
+
+autoplot(forecast(m_n_a_classic_cars, 7)) 
+
+accuracy(m_n_a_classic_cars)
+forecast_classic_cars
+```
+
+
+PLANES
+```{r}
+sales_planes <- sales[sales$PRODUCTLINE == 'Planes',]
+monthly_sales_planes <- sales_planes %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_planes_ts <- ts(monthly_sales_planes$qty, start=c(2003, 1), frequency=12)
+monthly_sales_planes_ts
+
+m_n_a_planes <- ets(monthly_sales_planes_ts, model = "MNA")
+m_n_a_planes
+
+forecast_planes <- forecast(m_n_a_planes, 7)
+
+autoplot(forecast(m_n_a_planes, 7)) 
+
+accuracy(m_n_a_planes)
+forecast_planes
+```
+
+
+TRAINS
+```{r}
+sales_trains <- sales[sales$PRODUCTLINE == 'Trains',]
+monthly_sales_trains <- sales_trains %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_trains_ts <- ts(monthly_sales_trains$qty, start=c(2003, 1), frequency=12)
+monthly_sales_trains_ts
+
+m_n_a_trains <- ets(monthly_sales_trains_ts, model = "MNA")
+m_n_a_trains
+
+forecast_trains <- forecast(m_n_a_trains, 7)
+
+autoplot(forecast(m_n_a_trains, 7)) 
+
+accuracy(m_n_a_trains)
+forecast_trains
+```
+
+
+MOTORCYCLES
+```{r}
+sales_motorcycles <- sales[sales$PRODUCTLINE == 'Motorcycles',]
+monthly_sales_motorcycles <- sales_motorcycles %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_motorcycles_ts <- ts(monthly_sales_motorcycles$qty, start=c(2003, 1), frequency=12)
+monthly_sales_motorcycles_ts
+
+m_n_a_motorcycles <- ets(monthly_sales_motorcycles_ts, model = "MNA")
+m_n_a_motorcycles
+
+forecast_motorcycles <- forecast(m_n_a_motorcycles, 7)
+
+autoplot(forecast(m_n_a_motorcycles, 7)) 
+
+accuracy(m_n_a_motorcycles)
+forecast_motorcycles
+```
+
+
+TRUCKS AND BUSES
+```{r}
+sales_trucks_and_buses <- sales[sales$PRODUCTLINE == 'Trucks and Buses',]
+monthly_sales_trucks_and_buses <- sales_trucks_and_buses %>%
+  group_by(order_month) %>%
+  summarise(qty = sum(QUANTITYORDERED)) 
+
+monthly_sales_trucks_and_buses_ts <- ts(monthly_sales_trucks_and_buses$qty, start=c(2003, 1), frequency=12)
+monthly_sales_trucks_and_buses_ts
+
+m_n_a_trucks_and_buses <- ets(monthly_sales_trucks_and_buses_ts, model = "MNA")
+m_n_a_trucks_and_buses
+
+forecast_trucks_and_buses <- forecast(m_n_a_trucks_and_buses, 7)
+
+autoplot(forecast(m_n_a_trucks_and_buses, 7)) 
+
+accuracy(m_n_a_trucks_and_buses)
+forecast_trucks_and_buses
+```
+
+Summary of forecasts for sales of Ships, Vintage Cars, Classic Cars, Planes, Trains, Motorcycles, Trucks and Busses for June 2005 - December 2005
+```{r}
+summary_forecast <- print(forecast_ships)
+summary_forecast$`Point Forecast` <- summary_forecast$`Lo 80` <- summary_forecast$`Hi 80` <- summary_forecast$`Lo 95` <- summary_forecast$`Hi 95` <- NULL
+summary_forecast$ships <- print(forecast_ships)[, 1]
+summary_forecast$trucks_and_buses <- print(forecast_trucks_and_buses)[, 1]
+summary_forecast$vintage_cars <- print(forecast_vintage_cars)[, 1]
+summary_forecast$classic_cars <- print(forecast_classic_cars)[, 1]
+summary_forecast$planes <- print(forecast_planes)[, 1]
+summary_forecast$trains <- print(forecast_trains)[, 1]
+summary_forecast$motorcycles <- print(forecast_motorcycles)[, 1]
+summary_forecast
+```

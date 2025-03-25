@@ -1,0 +1,280 @@
+---
+title: "Open_and_Order_Rate"
+output: html_document
+date: "2025-02-26"
+---
+
+```{r}
+library(conflicted)
+library(tidyverse)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+
+sales_data = read.csv("data/sales_data_sample.csv")
+email_metrics = read.csv("data/email_metrics.csv")
+last_email_before_order = read.csv("data/last_email_before_order.csv")
+
+create_rate_column <- function(num_col, denom_col){
+  #we will take our numerator column and divide by denom_col
+  email_metrics[num_col]/email_metrics[denom_col]
+}
+
+email_metrics["open_to_click_rate"] <- (create_rate_column("number_clicks", "number_opens"))
+
+actions <- list("opens", "clicks", "unsub", "orders")
+
+for(action in actions) {
+  print(paste("number_", action, sep=""))
+  num_col <- print(paste("number_", action, sep=""))
+  denom_col <- "emails_sent"
+  new_col <- paste(action, "_rate", sep="")
+  #same denominator for all of our columns
+  email_metrics[new_col] <- create_rate_column(num_col, denom_col)
+}
+
+
+last_email_before_order_cleaned <- last_email_before_order[last_email_before_order$X != 8984,]
+
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$number_orders <- 0
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$orders_rate <- 0
+
+sales_per_order <- sales_data %>% group_by(ORDERNUMBER) %>% summarise(sales_amount = sum(SALES))
+head(sales_data)
+
+orders_emails_with_sales <- merge(last_email_before_order_cleaned, sales_per_order, by="ORDERNUMBER")
+
+sale_amount_per_email <- aggregate(orders_emails_with_sales$sales_amount,
+          by=list(orders_emails_with_sales$date_email_sent, group=orders_emails_with_sales$group, day_of_week=orders_emails_with_sales$day_of_week, email_subject=orders_emails_with_sales$email_subject, X=orders_emails_with_sales$X), FUN=sum)
+
+sale_amount_per_email <- sale_amount_per_email %>%
+  rename(
+    date_email_sent = Group.1,
+    sales_amount = x
+    )
+
+sales_amount_only <- sale_amount_per_email[,c('email_subject','sales_amount','date_email_sent')]
+
+email_metric_with_sales <- merge(sales_amount_only,email_metrics,by=c("email_subject", "date_email_sent"), all=TRUE)
+email_metric_with_sales[is.na(email_metric_with_sales)] <- 0
+```
+
+```{r}
+# Rename email groups
+email_metric_with_sales$group[email_metric_with_sales$group=="Group A"] <- "Conversational Approach"
+email_metric_with_sales$group[email_metric_with_sales$group=="Group B"] <- "Alarming Approach"
+
+# Rename days of the week
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==0] <- "0 - Monday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==2] <- "2 - Wednesday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==4] <- "4 - Friday"
+
+# Split data based on time period
+pre_march <- email_metric_with_sales[email_metric_with_sales$before_march == "True",]
+post_march <- email_metric_with_sales[email_metric_with_sales$before_march == "False",]
+
+#colnames(email_metric_with_sales)
+
+# Calculate open rate
+# Pre-March (Tone Analysis)
+open_rate_tone <- pre_march[,c('group','opens_rate')]
+
+# Post-March (Day of the Week Analysis)
+open_rate_day <- post_march[,c('day_of_week','opens_rate')]
+```
+
+# Open Rate Tests for Tone
+
+## Histogram of Open Rate Tone
+
+```{r}
+hist(open_rate_tone$opens_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open rates for email tone.
+
+## Shapiro test for normality on Open Rate Tone
+
+```{r}
+shapiro.test(open_rate_tone$opens_rate)
+```
+
+Shapiro test p-value \> 0.05, meaning it is normally distributed data for the open rates.
+
+## Q-Q Plot for normality on Open Rate Tone
+
+```{r}
+qqnorm(open_rate_tone$opens_rate)
+qqline(open_rate_tone$opens_rate, col = "red")
+```
+
+The Q-Q Plot shows how well open rate data follows a normal distribution. Deviations at the ends mean there could be skewness or outliers which suggests some non-normality in the data.
+
+The core of the data is normal where the middle values closely follow the normal distribution line.
+
+## Levene's Test of Open Rate Tone
+
+```{r}
+library(car)
+
+leveneTest(opens_rate ~ group,
+           data = open_rate_tone)
+```
+
+Levene's test indicates equal variances in the open rate for tone groups since the p-value \> 0.05.
+
+## Perform T-Test on Open Rate Tone
+
+```{r}
+t.test(opens_rate ~ group, 
+       data = open_rate_tone, 
+       var.equal = TRUE)
+```
+
+When running the two sample t-test, the p-value is \< 0.05 so there is a statistically significant difference between the open rates of the two email tone groups. We reject the null hypothesis.
+
+# Open Rate Analysis For Tone
+
+The analysis of open rate by email tone is based on data collected before March 2004. The statistical tests indicate that email tone (Alarming vs. Conversational) had a significant effect on open rates, despite the limited sample size (\< 30 per group).
+
+A histogram initially suggested that open rates were not normally distributed. To formally assess normality, the Shapiro-Wilk test returned p \> 0.05, indicating that the data does not significantly deviate from normality. However, the results from the histogram and Shapiro-Wilk test were contradictory, which may be due to the small sample size. To further confirm, a Q-Q plot was generated to visualize the distribution. The middle values align closely with the normal distribution, but deviations at both tails suggest some skewness or potential outliers, reinforcing the non-normality observed in the histogram.
+
+The Levene’s test confirmed that the two tone groups had equal variance (p \> 0.05), allowing the use of a two-sample T-test. The T-test result (p \< 0.05) confirmed a statistically significant difference in open rates between the two tones. This allows us to reject the null hypothesis, concluding that email tone significantly affected open rates.
+
+# Open Rate Tests for Day of Week
+
+## Histogram of Open Rate Day of Week
+
+```{r}
+hist(open_rate_day$opens_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open rate data for the weekdays.
+
+## Shapiro's Test of Normality for Open Rate Day of Week
+
+```{r}
+shapiro.test(open_rate_day$opens_rate)
+```
+
+It is not normally distributed data (P \< 0.05) for open rates of emails by day of week.
+
+## Q-Q Plot for normality on Open Rate Day of Week
+
+```{r}
+qqnorm(open_rate_day$opens_rate)
+qqline(open_rate_day$opens_rate, col = "red")
+```
+
+The Q-Q plot shows deviation and skewedness, indicating non-normality. The lower tail on the left side has a cluster of points, suggesting a floor effect with many zero values, meaning some emails had very low open rates. The upper tail shows potential outliers, where a few emails had exceptionally high open rates. While the middle values somewhat follow the normal distribution line, the significant deviations in the tails confirm that the data is not normally distributed.
+
+## Kruskal-Wallis Test for Open Rate Day of Week
+
+```{r}
+kruskal.test(opens_rate ~ day_of_week, 
+             data = open_rate_day)
+```
+
+The non-parametric Kruskal-Wallis Test resulted in p-value \< 0.05, indicating a statistically significant difference in open rates across at least one day of the week. This confirms that the day an email is sent influences open rates.
+
+# Open Rate Analysis for Day of Week
+
+The analysis of open rate by day of the week is based on data collected post-March 2004. The statistical tests show a significant variation in open rates across different weekdays, indicating that the day an email is sent can affect engagement levels.
+
+The histogram revealed skewnessed and variability in open rates across different days, indicating a deviation from normality. The Shapiro-Wilk test was run to check normality, and returned p \< 0.05, indicating that the data does not follow a normal distribution. Since the histogram and normality test aligned in indicating non-normality, a Q-Q plot was generated for further verification. The middle values align relatively close to the the normal distribution, but deviations at the tails indicate potential skewness and outliers, further confirming the non-normality observed in the histogram.
+
+Given the non-normal distribution of open rates across weekdays, the non-parametric Kruskal-Wallis test was performed to determine whether there were significant differences between the days. The result (p \< 0.05) confirmed a statistically significant difference in open rates across at least one weekday. Similar to the open rate for email tone, we reject the null hypothesis, meaning that the day an email is sent significantly affects open rates.
+
+# Order Rate Tests for Tone
+
+```{r}
+# Pre-March (Tone Analysis)
+order_rate_tone <- pre_march[,c('group','orders_rate')]
+
+# Post-March (Day of the Week Analysis)
+order_rate_day <- post_march[,c('day_of_week','orders_rate')]
+```
+
+## Histogram for Order Rate Tone
+
+```{r}
+hist(order_rate_tone$orders_rate, breaks = 20)
+```
+
+Indicates a non normal distribution for the order rates.
+
+## Shapiro test for normality for Order Rate Tone
+
+```{r}
+shapiro.test(order_rate_tone$orders_rate)
+```
+
+The Shapiro test reveals a non normal distribution with p-value \< 0.05 of order rate data for email tone.
+
+## Q-Q Plot for normality on Order Rate Tone
+
+```{r}
+qqnorm(order_rate_tone$orders_rate)
+qqline(order_rate_tone$orders_rate, col = "red")
+```
+
+The Q-Q plot shows that it is a non-normal distribution. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+## Krusal-Wallis Test for Order Rate Tone
+
+```{r}
+kruskal.test(orders_rate ~ group,
+             data = order_rate_tone)
+```
+
+The Kruskal-Wallis Test shows a p-value that is \> 0.05 so it is not statistically significant that the tone affects the order rate for emails.
+
+# Order Rate Analysis for Tone
+
+The analysis of order rate by email tone is based on data collected before March 2004. The statistical tests indicate that email tone (Alarming vs. Conversational) did not have a statistically significant effect on order rates, as shown by the Kruskal-Wallis test (p \> 0.05).
+
+The histogram suggests variations in distribution, where order rates did not follow a normal pattern showing skewness and variability in the data. The Shapiro-Wilk test resulted in p \< 0.05, further confirming that the order rate data deviates from a normal distribution. Since both the histogram and normality test indicated non-normality, a Q-Q plot was generated for further visualization. The plot showed that while middle values loosely follow the normal line, the tails deviate significantly. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+Given the non-normality of the data, a Kruskal-Wallis test was performed. The test returned p \> 0.05, indicating that there is no statistically significant difference in order rates between the two email tones. Since the p-value exceeded 0.05, there is insufficient evidence to suggest that email tone had a significant impact on order rates.
+
+# Order Rate Tests for Day of Week
+
+## Histogram for Order Rate Day of Week
+
+```{r}
+hist(order_rate_day$orders_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of order rate data for email tone.
+
+## Shapiro test for normality for Order Rate Day of Week
+
+```{r}
+shapiro.test(order_rate_day$orders_rate)
+```
+
+Indicates that it is not normally distributed data with a p-value \< 0.05.
+
+## Q-Q Plot for normality on Order Rate Day of Week
+
+```{r}
+qqnorm(order_rate_day$orders_rate)
+qqline(order_rate_day$orders_rate, col = "red")
+```
+
+The Q-Q plot shows that it is a non-normal distribution. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+## Kruskal-Wallis Test for Order Rate Day of Week
+
+```{r}
+kruskal.test(orders_rate ~ day_of_week, data = order_rate_day)
+```
+
+The Kruskal-Wallis Test gives a p-value \> 0.05 so we fail to reject the null hypothesis, there is no significance in the order rates to the days of the week the email is sent.
+
+# Order Rate Analysis for Day of Week
+
+The analysis of order rate by day of the week is based on data collected post-March 2004. Statistical tests reveal no significant relationship between the day an email is sent and order rates, as indicated by the Kruskal-Wallis test (p \> 0.05).
+
+The histogram displayed a non-normal distribution of order rates, with visible skewness and variability across different days. To formally test for normality, the Shapiro-Wilk test returned p \< 0.05, confirming that the order rate data does not follow a normal distribution. Since both the histogram and normality test suggested non-normality, a Q-Q plot was generated for further assessment. The plot indicated that while middle values loosely follow the normal line, significant deviations at both tails suggest skewness and the presence of outliers. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights potential outliers, indicating a few emails had exceptionally high order rates.
+
+Given the non-normality of the data, a Kruskal-Wallis test was conducted and returned p \> 0.05, indicating no statistically significant difference in order rates across weekdays. Therefore, we fail to reject the null hypothesis, concluding that the day an email is sent does not significantly impact order rates.

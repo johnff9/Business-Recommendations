@@ -1,0 +1,348 @@
+---
+title: "Data Processing for Email Marketing"
+output: html_notebook
+---
+
+Data cleaning and consolidation
+
+```{r}
+# install.packages("car", "effectsize")
+library(conflicted)
+library(tidyverse)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+
+email_metrics = read.csv("data/email_metrics.csv")
+sales_data = read.csv("data/sales_data_sample.csv")
+last_email_before_order = read.csv("data/last_email_before_order.csv")
+
+create_rate_column <- function(num_col, denom_col){
+  #we will take our numerator column and divide by denom_col
+  email_metrics[num_col]/email_metrics[denom_col]
+}
+
+email_metrics["open_to_click_rate"] <- (create_rate_column("number_clicks", "number_opens"))
+
+actions <- list("opens", "clicks", "unsub", "orders")
+
+for(action in actions) {
+  print(paste("number_", action, sep=""))
+  num_col <- print(paste("number_", action, sep=""))
+  denom_col <- "emails_sent"
+  new_col <- paste(action, "_rate", sep="")
+  #same denominator for all of our columns
+  email_metrics[new_col] <- create_rate_column(num_col, denom_col)
+}
+
+
+last_email_before_order_cleaned <- last_email_before_order[last_email_before_order$X != 8984,]
+
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$number_orders <- 0
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$orders_rate <- 0
+
+sales_per_order <- sales_data %>% group_by(ORDERNUMBER) %>% summarise(sales_amount = sum(SALES))
+head(sales_data)
+
+orders_emails_with_sales <- merge(last_email_before_order_cleaned, sales_per_order, by="ORDERNUMBER")
+
+sale_amount_per_email <- aggregate(orders_emails_with_sales$sales_amount,
+          by=list(orders_emails_with_sales$date_email_sent, group=orders_emails_with_sales$group, day_of_week=orders_emails_with_sales$day_of_week, email_subject=orders_emails_with_sales$email_subject, X=orders_emails_with_sales$X), FUN=sum)
+
+sale_amount_per_email <- sale_amount_per_email %>%
+  rename(
+    date_email_sent = Group.1,
+    sales_amount = x
+    )
+
+sales_amount_only <- sale_amount_per_email[,c('email_subject','sales_amount','date_email_sent')]
+
+email_metric_with_sales <- merge(sales_amount_only,email_metrics,by=c("email_subject", "date_email_sent"), all=TRUE)
+email_metric_with_sales[is.na(email_metric_with_sales)] <- 0
+
+```
+
+analysis on sales amount vs tone
+
+analysis on sales amount vs day of week
+
+we will be looking for a significance of 0.05
+
+Data has been split into pre march and post march
+
+pre march data is used for tone testing and post march for week day testing
+
+```{r}
+
+email_metric_with_sales$group[email_metric_with_sales$group=="Group A"] <- "Conversational Approach"
+email_metric_with_sales$group[email_metric_with_sales$group=="Group B"] <- "Alarming Approach"
+
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==0] <- "0 - Monday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==2] <- "2 - Wednesday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==4] <- "4 - Friday"
+
+pre_march <- email_metric_with_sales[email_metric_with_sales$before_march == "True",]
+post_march <- email_metric_with_sales[email_metric_with_sales$before_march == "False",]
+sales_tone <- pre_march[,c('group','sales_amount')]
+sales_day <- post_march[,c('day_of_week','sales_amount')]
+
+library(car)
+leveneTest(sales_amount ~ group,
+           data = sales_tone)
+
+```
+
+Levene's test indicates not equal variances in sales data between tone groups
+
+Histogram of sales data for pre march
+
+```{r}
+hist(sales_tone$sales)
+```
+
+Indicates a non normal distribution of sales data
+
+Therefore a t test cannot be used as the base assumptions are violated
+
+Instead we will run a Run Mann whitney u test on data (due to non parametric nature)
+
+```{r}
+res <- wilcox.test(sales_amount ~ group, data = sales_tone,
+                   exact = FALSE)
+res
+```
+
+our null hypothesis cannot be rejected at the 0.05 significance level for the differences in sale means limited sample size due to limiting data to pre march The mann whitney U test does not indicate rejection of the hypothesis at the proposed significance level
+
+box plot of sales vs tone
+
+```{r}
+boxplot(sales_amount ~ group,data=sales_tone, main="Sales by Email Tone",
+        col=(c("blue","orange")),
+   xlab="Email group", ylab="Sales amount (USD)")
+```
+
+Visually a difference can be observed, but more data is needed to confirm statistical significance of observed differences.
+
+Histogram of sales data for pre march
+
+```{r}
+hist(sales_day$sales_amount)
+```
+
+Histogram indicates non normal distribution of sales amounts post march
+
+Therefore an Anova is inappropriate to run as the base assumptions are violated
+
+Instead we will run a Kruskal Wallis test (for non parametric data as observed)
+
+```{r}
+kruskal.test(sales_amount ~ day_of_week, data = sales_day)
+```
+
+Via Kruskal Wallis test for non normally distributed data our null hypothesis cannot be rejected at the 0.05 significance level for the differences in sale means due to day of the week. box plot of sales vs day of week
+
+```{r}
+boxplot(sales_amount ~ day_of_week,data=sales_day, main="Sales by Day of Week",
+        col=(c("yellow","orange","red")),
+   xlab="Day of week", ylab="Sales amount (USD)")
+```
+
+Significant outliers are present in the sales data for Monday, while Friday's averages seem higher volume with fewer significant outliers. Collaboration with sales/ordering department recommended to identify if underlying patterns are consistent with past sales data, or are affected significantly by day of marketing email.
+
+prep data for unsubscribe analysis
+
+```{r}
+unsubscribe_tone <- pre_march[,c('group','unsub_rate')]
+unsubscribe_day <- post_march[,c('day_of_week','unsub_rate')]
+```
+
+analysis on unsubscribe rate vs tone
+
+Histogram of num unsubscribed pre march
+
+```{r}
+hist(unsubscribe_tone$unsub_rate)
+```
+
+Distribution is non normal and sample size is small
+
+Therefore a t test is in appropriate to run on the data, as its base assumptions are violated
+
+Instead Run wilcox test to generate the Mann whitney u on the data (due to non parametric nature)
+
+```{r}
+res <- wilcox.test(unsub_rate ~ group, data = unsubscribe_tone,
+                   exact = FALSE)
+res
+```
+
+The null hypothesis that there is not an effect on number of unsubscriptions based on tone can be rejected at the 0.05 confidence interval
+
+Indicating that the alternative hypothesis, that there is an effect on the number of unsubscriptions by email approach/tone, can be accepted.
+
+Box Plot of Tone vs unsub_rate
+
+```{r}
+boxplot(unsub_rate ~ group, data = unsubscribe_tone, main="Unsubscribe rate by Email Tone",
+        col=(c("blue","orange")),
+   xlab="Email group", ylab="Unsubscribe rate")
+```
+
+It can be seen that the conversational approach generated very few unsubscriptions (1), while the unsubscription rate for the alarming approach was higher and statistically significant. We would reccommend not pursuing utilization of the alarming approach in our email marketing.
+
+analysis on unsubscribe rate vs day of week
+
+Histogram of unsubscribe rate post march
+
+```{r}
+hist(unsubscribe_day$unsub_rate)
+```
+
+Distribution is non normal and sample size is medium
+
+We will run a Kruskal Wallis test (for non parametric data as observed)
+
+```{r}
+kruskal.test(unsub_rate ~ day_of_week, data = unsubscribe_day)
+```
+
+Via Kruskal Wallis test for non normally distributed data our null hypothesis cannot be rejected at the 0.05 significance level for the differences in unsubscriptions due to day of the week.
+
+box plot of unsubscriptions vs day of week
+
+```{r}
+boxplot(unsub_rate ~ day_of_week, data = unsubscribe_day, main="Unsubscribe rate by Day of Week",
+        col=(c("yellow","orange","red")),
+   xlab="Day of week", ylab="unsubscribe Rate")
+```
+
+The effect of the day of the week on unsubscriptions appears to be minimal, and not statistically significant within our sample.
+
+Future exploration Power analysis of pre march sales data (by tone) -- intended T test Throughout the following explorations for T test, although cohen's d is appropriate only for normal distributions, it has been used to provide an estimate for the expected effect size when running a t test on normally distributed data, it is difficult to tell whether the data we end up with will be normally distributed, so this is a rough approximation, and serves only as a guideline for the size of data set we should be gathering in order to arrive at more informative conclusions.
+
+For Anova, Eta\*\*2 was used as the effect size estimation, applying similar logic to the T test in attempting to estimate an appropriate sample size.
+
+```{r}
+length(sales_tone$sales_amount)
+library(effectsize)
+cohens_d(sales_amount ~ group, data = sales_tone)
+```
+
+```{r}
+library(pwr)
+pwr.t.test(d = -0.29, power = 0.8,
+           sig.level = 0.05,
+           type = "two.sample",
+           alternative = "two.sided")
+```
+
+We can estimate a desired sample size of 188 per group or 396
+
+Power analysis of post march sales data (by day) -- intended test Anova
+
+```{r}
+# Compute the analysis of variance
+res.aov <- aov(sales_amount ~ day_of_week, data = sales_day)
+# Summary of the analysis
+summary(res.aov)
+```
+
+```{r}
+length(sales_tone$sales_amount)
+library(effectsize)
+m <- lm(sales_amount ~ day_of_week, data = sales_day)
+eta_squared(m, partial = FALSE)
+
+```
+
+Very small effect size
+
+```{r}
+power.anova.test(groups = 3, n = NULL,
+                 between.var = 3.964e+08, within.var = 1.722e+10,
+                 sig.level = 0.05, power = 0.8)
+```
+
+We can estimate a desired sample size of 211 per group or 633
+
+Power analysis of pre march unsubscribe data (by tone) -- intended T test
+
+```{r}
+length(unsubscribe_tone$unsub_rate)
+library(effectsize)
+cohens_d(unsub_rate ~ group, data = unsubscribe_tone)
+```
+
+```{r}
+library(pwr)
+pwr.t.test(d = 1.5, power = 0.8,
+           sig.level = 0.05,
+           type = "two.sample",
+           alternative = "two.sided")
+```
+
+We can estimate a desired sample size of 9 per group or 18, which is fulfilled by our sample (although not normally distributed), and reflected in the rejection of the null hypothesis.
+
+Power analysis of post march unsubscribe data (by day) -- intended test Anova
+
+```{r}
+# Compute the analysis of variance
+res.aov <- aov(unsub_rate ~ day_of_week, data = unsubscribe_day)
+# Summary of the analysis
+summary(res.aov)
+```
+
+```{r}
+length(unsubscribe_day$unsub_rate)
+library(effectsize)
+m <- lm(unsub_rate ~ day_of_week, data = unsubscribe_day)
+eta_squared(m, partial = FALSE)
+```
+
+Very small effect size
+
+```{r}
+power.anova.test(groups = 3, n = NULL,
+                 between.var = 0.00037, within.var = 0.03554,
+                 sig.level = 0.05, power = 0.8)
+```
+
+We can estimate a desired sample size of 464 per group or 1392
+
+Written Analysis for Unsubscribe Rate
+
+By Email Approach/Tone
+
+In order to avoid compounding factors in the data, the analysis on tone effects on unsubscribe rate were limited to the data set gathered before March. This allowed analysis of a single factor across a single season, and avoided dealing with data collected from different days, which due to the differing nature of the data sets, and the limited data available, would have required potentially biased assumptions on the part of the data team, and brought into question the validity of any results found.
+
+There was a statistically significant difference between the approach groups, even in the limited pre-march sample size. With a histogram we can observe the non-normal distribution of the unsubscribe rate data, and determine the applicability of a Wilcoxon rank sum test addressing the medians. This results in a p value of 0.001045, allowing rejection of the null hypothesis at the 0.05 significance level selected for these tests.
+
+Null hypothesis rejected – statistically significant results even with small sample size. Data not normally distributed so nonparametric tests were used. T test power analysis was performed to identify an appropriate sample size using Cohen's D as an approximation for effect size, and a t power test to identify an appropriate group size if the data were normally distributed (these results are not statistically valid, and are used only to recommend a goal sample size in future experiments assuming a normal distribution of the data, which is not present in the current data). A minimum number of 9 samples per group was the result of the exploration, which aligns with the Wilcoxon rank sum test finding statistical significance even in the small sample size. Further testing is likely not warranted in this area, and focus should be on smaller tonal variances/or on the content of the email, for the sake of not losing clients unnecessarily while performing data gathering.
+
+By Day of Week
+
+In order to avoid compounding factors in the data, the analysis on day of the week effects on unsubscribe rate were limited to the data set gathered after March. This allowed us to avoid weighting the data too heavily with Wednesdays, especially considering the different quarter/season of all the Wednesdays pre-March.
+
+The data for the unsubscribe rate compared to day of the week can be viewed using a histogram and a non-normal distribution identified. This encourages use of a Kruskal-Wallis rank sum test for non-parametric data. Based on the p value of 0.5339, the null hypothesis of there being no difference between unsubscription rates based on days of the week cannot be rejected at the 0.05 significance level. Power analysis was performed with anova using between and within variation estimation (again, on the non normally distributed data, hence the invalid nature of the statistical results). The effect size was estimate using eta - squared run on a linear model fit to the data, and is similarly statistically invalid, but can be observed to align with the large group size identified by the power test as necessary to confidently draw a conclusion on a normally distributed dataset reflecting the between and within variations of the unsubscription rate by day data.
+
+The estimated sample size to have sufficient power and p value to reject or accept the null hypothesis was 464 per group or 1392 total. Much larger than our existing dataset, and potentially difficult to achieve with existing customer base due to B2B nature of the business, which paired with the very small estimated effect size may warrant a more focused approach and further domain specific investigations before designing further experiments around day of the week testing. The unsubscribe rate is important, but based on exploratory analysis, appears to be minimally influenced by the day of the week, and gathering sufficient data to generate a more confident analysis would require a larger customer base.
+
+Written Analysis for Sale Amount
+
+By Email Tone
+
+In order to avoid compounding factors in the data, the analysis on tone effects on sale amount were limited to the data set gathered before March. This allowed analysis of a single factor across a single season, and avoided dealing with data collected from different days, which due to the differing nature of the data sets, and the limited data available, would have required potentially biased assumptions on the part of the data team, and brought into question the validity of any results found.
+
+There was not a statistically significant difference between the approach groups in sale amount. With a histogram we can observe the non-normal distribution of the unsubscribe rate data, and determine the applicability of a Wilcoxon rank sum test addressing the medians. This results in a p value of 0.4582, not allowing rejection of the null hypothesis at the 0.05 significance level selected for these tests.
+
+Null hypothesis not rejected – not statistically significant results. Data not normally distributed so nonparametric tests were used. T test power analysis was performed to identify an appropriate sample size using Cohen's D as an approximation for effect size, and a t power test to identify an appropriate group size if the data were normally distributed (these results are not statistically valid, and are used only to recommend a goal sample size in future experiments assuming a normal distribution of the data, which is not present in the current data). A minimum number of 188 samples per group or 396 total was the result of the exploration. Due to the ability to run multiple email groups simultaneously, this sample size is more achievable, as by running 10 separate email groups, 5 of each approach/tone, sufficient data could be gathered in 19 weeks. There is a visible pattern in the data indicating increased sales for the less aggressive tone, but it cannot be identified as statistically significant without further testing.
+
+By Day of Week
+
+In order to avoid compounding factors in the data, the analysis on day of the week effects on sales amount were limited to the data set gathered after March. This allowed us to avoid weighting the data too heavily with Wednesdays, especially considering the different quarter/season of all the Wednesdays pre-March.
+
+The data for the sales amount compared to day of the week can be viewed using a histogram and a non-normal distribution identified. This encourages use of a Kruskal-Wallis rank sum test for non-parametric data. Based on the p value of 0.2238, the null hypothesis of there being no difference between sales amounts based on days of the week cannot be rejected at the 0.05 significance level. Power analysis was performed with anova using between and within variation estimation (again, on the non normally distributed data, hence the invalid nature of the statistical results). The effect size was estimate using eta - squared run on a linear model fit to the data, and is similarly statistically invalid, but can be observed to align with the large group size identified by the power test as necessary to confidently draw a conclusion on a normally distributed dataset reflecting the between and within variations of the sales amount by day data. The estimated sample size to have sufficient power value of 0.8 and p value of 0.05 to reject or accept the null hypothesis with minimal type 1 and type 2 errors was 211 per group or 633 total. This would require four years to gather sufficient samples with a single set of Monday, Wednesday, Friday email groups, and due to a limited client/email list, a recommendation to actively pursue this avenue directly without further insight is hard to make.
+
+While if multiple groups were used the data could be gathered more quickly,due to limitations in predicting appropriate sample sizes on non-normally distributed data, while this may still be worth pursuing, similar to the unsubscribe rate, and likely even more so, domain experts should be referenced, along with further analysis of ordering patterns in order to identify whether patterns may correspond to normal ordering days (i.e. many customers order their big regular orders on Monday mornings, or first Monday of the month, and they restock the products they sold during the week on Fridays), rather than the direct 1:1 relationship of emails/marketing to ordering day.
+
+In conclusion, the null hypothesis is not rejected at the 0.05 significance level, data has significant outliers, especially on Mondays. Maybe need to control for typical ordering patterns pre-campaign to avoid just ‘discovering’ standard business practices. Data is not normally distributed so non parametric tests used.

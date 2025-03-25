@@ -1,0 +1,99 @@
+---
+title: "Weekly factory production"
+output: html_notebook
+---
+What is the cost per product line to produce?
+What is the average profit per product line?
+
+Data cleaning and consolidation
+```{r}
+# install.packages("car", "effectsize")
+library(conflicted)
+library(tidyverse)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+
+production_metrics <- read.csv("data/weekly_factory_production.csv")
+sales <- read.csv("data/sales_data_sample.csv")
+View(production_metrics)
+
+```
+Sum quantity ordered and sales for each product line and do total sales/quantity = gross per
+then net = gross per - estimated cost per
+doing by total sales instead of individual price each since it ends up at the same result without needing to weight for higher value items
+that sell less etc.
+```{r}
+summary_product <- aggregate(sales$QUANTITYORDERED, by=list(product_line=sales$PRODUCTLINE), FUN=sum)
+total_sales <- aggregate(sales$SALES, by=list(product_line=sales$PRODUCTLINE), FUN=sum)
+summary_product$total_sales <- total_sales$x
+summary_product$average_prices <- summary_product$total_sales/summary_product$x
+
+```
+```{r}
+#production_metrics
+```
+
+```{r}
+#sales
+```
+Filter by factory id
+```{r}
+factory_0 <-production_metrics %>% filter(factory_id == 0)
+factory_0_clean <- factory_0[factory_0$outlier == 0,]
+factory_1 <-production_metrics %>% filter(factory_id == 1)
+factory_1_clean <-factory_1[factory_1$outlier == 0,]
+factory_2 <-production_metrics %>% filter(factory_id == 2)
+factory_2_clean <-factory_2[factory_2$outlier == 0,]
+```
+```{r}
+lm_factory_0 <- lm(factory_0_clean$weekly_cost ~ factory_0_clean$Classic.Cars + factory_0_clean$Ships)
+#lm_factory_0 <- lm(factory_0_clean$weekly_cost ~ 0 + factory_0_clean$Classic.Cars + factory_0_clean$Ships)
+summary_product$average_costs <- 0
+summary_product[1,]$average_costs <- summary(lm_factory_0)$coefficients["factory_0_clean$Classic.Cars", "Estimate"]
+summary_product[4,]$average_costs <- summary(lm_factory_0)$coefficients["factory_0_clean$Ships", "Estimate"]
+summary(lm_factory_0)
+```
+83.726 estimated cost per classic car
+15.909 estimated cost per ship
+448.03 estimated base weekly cost for factory_0
+```{r}
+lm_factory_1 <- lm(factory_1_clean$weekly_cost ~ factory_1_clean$Motorcycles + factory_1_clean$Trucks.and.Buses)
+#lm_factory_1 <- lm(factory_1_clean$weekly_cost ~ 0 + factory_1_clean$Motorcycles + factory_1_clean$Trucks.and.Buses)
+summary_product[2,]$average_costs <- summary(lm_factory_1)$coefficients["factory_1_clean$Motorcycles", "Estimate"]
+summary_product[6,]$average_costs <- summary(lm_factory_1)$coefficients["factory_1_clean$Trucks.and.Buses", "Estimate"]
+summary(lm_factory_1)
+```
+75.090       estimated cost per motorcycle
+91.039       estimated cost per truck/bus
+256.687      estimated base weekly cost for factory_1
+
+```{r}
+lm_factory_2 <- lm(factory_2_clean$weekly_cost ~ factory_2_clean$Vintage.Cars + factory_2_clean$Planes)
+#lm_factory_2 <- lm(factory_2_clean$weekly_cost ~ 0 + factory_2_clean$Vintage.Cars + factory_2_clean$Planes)
+summary_product[7,]$average_costs <- summary(lm_factory_2)$coefficients["factory_2_clean$Vintage.Cars", "Estimate"]
+summary_product[3,]$average_costs <- summary(lm_factory_2)$coefficients["factory_2_clean$Planes", "Estimate"]
+summary(lm_factory_2)
+```
+66.673       estimated cost per vintage car
+83.104       estimated cost per plane
+546.772      estimated base weekly cost for factory_2
+
+
+Calculating average profit per product line (commented out lm removes the intercept, thus rolling factory base weekly cost into the estimate, but higher volume in high initial cost factories could offset initial costs, so considering the base weekly cost separately when optimizing for profitability makes
+sense)
+```{r}
+summary_product$average_profit_per_item <- summary_product$average_prices - summary_product$average_costs
+summary_product <- summary_product[-c(5),]
+summary_product
+```
+Ignoring trains for now as there is no production data
+
+```{r}
+ggplot(summary_product, aes(x=product_line, y = average_profit_per_item)) +
+    geom_bar(stat="identity") +                                   
+    labs(x="ProductLine",                                              
+         y="Averarge Profit",                                                    
+         title = "Profit per product line")  
+```
+
+

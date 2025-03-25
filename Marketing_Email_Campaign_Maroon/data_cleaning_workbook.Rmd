@@ -1,0 +1,61 @@
+---
+title: "Data Processing for Email Marketing"
+output: html_notebook
+---
+
+
+```{r}
+library(conflicted)
+library(tidyverse)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+
+email_metrics = read.csv("data/email_metrics.csv")
+sales_data = read.csv("data/sales_data_sample.csv")
+last_email_before_order = read.csv("data/last_email_before_order.csv")
+
+create_rate_column <- function(num_col, denom_col){
+  #we will take our numerator column and divide by denom_col
+  email_metrics[num_col]/email_metrics[denom_col]
+}
+
+email_metrics["open_to_click_rate"] <- (create_rate_column("number_clicks", "number_opens"))
+
+actions <- list("opens", "clicks", "unsub", "orders")
+
+for(action in actions) {
+  print(paste("number_", action, sep=""))
+  num_col <- print(paste("number_", action, sep=""))
+  denom_col <- "emails_sent"
+  new_col <- paste(action, "_rate", sep="")
+  #same denominator for all of our columns
+  email_metrics[new_col] <- create_rate_column(num_col, denom_col)
+}
+
+
+last_email_before_order_cleaned <- last_email_before_order[last_email_before_order$X != 8984,]
+
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$number_orders <- 0
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$orders_rate <- 0
+
+sales_per_order <- sales_data %>% group_by(ORDERNUMBER) %>% summarise(sales_amount = sum(SALES))
+head(sales_data)
+
+orders_emails_with_sales <- merge(last_email_before_order_cleaned, sales_per_order, by="ORDERNUMBER")
+
+sale_amount_per_email <- aggregate(orders_emails_with_sales$sales_amount,
+          by=list(orders_emails_with_sales$date_email_sent, group=orders_emails_with_sales$group, day_of_week=orders_emails_with_sales$day_of_week, email_subject=orders_emails_with_sales$email_subject, X=orders_emails_with_sales$X), FUN=sum)
+
+sale_amount_per_email <- sale_amount_per_email %>%
+  rename(
+    date_email_sent = Group.1,
+    sales_amount = x
+    )
+
+sales_amount_only <- sale_amount_per_email[,c('email_subject','sales_amount','date_email_sent')]
+
+email_metric_with_sales <- merge(sales_amount_only,email_metrics,by=c("email_subject", "date_email_sent"), all=TRUE)
+email_metric_with_sales[is.na(email_metric_with_sales)] <- 0
+
+```
+

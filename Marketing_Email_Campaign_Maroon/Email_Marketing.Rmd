@@ -1,0 +1,956 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Email Marketing Campaign A/B Testing
+
+Summary 
+
+At the start of 2004, Timeless Transport Models aimed to boost year-round customer engagement. To achieve this, they tested two email strategies: 
+
+-   Conversational Approach (Alex’s approach) -Friendly, personal emails to build trust. 
+
+<!-- -->
+
+-   Alarming Approach (Jordan’s approach) -High-impact subject lines to create urgency. 
+
+From January to February, emails were only sent on Wednesdays. Starting in March, the experiment expanded to send emails—Monday, Wednesday, or Friday—to determine the impact of timing on engagement. \
+This analysis aimed to evaluate the effectiveness of **email tone** (Alarming vs. Conversational) and **day of the week** (Monday, Wednesday, Friday) on key email marketing metrics: open rate, click rate, open-to-click rate, unsubscribe rate, and sales amount. The goal was to identify actionable insights to optimize email campaigns. Data was split into pre-March (for tone analysis) and post-March (for day-of-week analysis) to avoid seasonal confounding factors. Statistical tests (Shapiro-Wilk, t-tests, Kruskal-Wallis, Wilcoxon) and visualizations (histograms, Q-Q plots, bar charts) were used to assess normality, compare groups, and quantify effects.
+
+```{r}
+library(conflicted)
+library(tidyverse)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+
+email_metrics = read.csv("data/email_metrics.csv")
+sales_data = read.csv("data/sales_data_sample.csv")
+last_email_before_order = read.csv("data/last_email_before_order.csv")
+
+create_rate_column <- function(num_col, denom_col){
+  #we will take our numerator column and divide by denom_col
+  email_metrics[num_col]/email_metrics[denom_col]
+}
+
+email_metrics["open_to_click_rate"] <- (create_rate_column("number_clicks", "number_opens"))
+
+actions <- list("opens", "clicks", "unsub", "orders")
+
+for(action in actions) {
+  print(paste("number_", action, sep=""))
+  num_col <- print(paste("number_", action, sep=""))
+  denom_col <- "emails_sent"
+  new_col <- paste(action, "_rate", sep="")
+  #same denominator for all of our columns
+  email_metrics[new_col] <- create_rate_column(num_col, denom_col)
+}
+
+
+last_email_before_order_cleaned <- last_email_before_order[last_email_before_order$X != 8984,]
+
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$number_orders <- 0
+email_metrics[email_metrics$email_subject == "TIME-SENSITIVE: LAST CHANCE FOR FEBRUARY’S HOTTEST PICKS!",]$orders_rate <- 0
+
+sales_per_order <- sales_data %>% group_by(ORDERNUMBER) %>% summarise(sales_amount = sum(SALES))
+head(sales_data)
+
+orders_emails_with_sales <- merge(last_email_before_order_cleaned, sales_per_order, by="ORDERNUMBER")
+
+sale_amount_per_email <- aggregate(orders_emails_with_sales$sales_amount,
+          by=list(orders_emails_with_sales$date_email_sent, group=orders_emails_with_sales$group, day_of_week=orders_emails_with_sales$day_of_week, email_subject=orders_emails_with_sales$email_subject, X=orders_emails_with_sales$X), FUN=sum)
+
+sale_amount_per_email <- sale_amount_per_email %>%
+  rename(
+    date_email_sent = Group.1,
+    sales_amount = x
+    )
+
+sales_amount_only <- sale_amount_per_email[,c('email_subject','sales_amount','date_email_sent')]
+
+email_metric_with_sales <- merge(sales_amount_only,email_metrics,by=c("email_subject", "date_email_sent"), all=TRUE)
+email_metric_with_sales[is.na(email_metric_with_sales)] <- 0
+```
+
+```{r}
+
+email_metric_with_sales$group[email_metric_with_sales$group=="Group A"] <- "Conversational Approach"
+email_metric_with_sales$group[email_metric_with_sales$group=="Group B"] <- "Alarming Approach"
+
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==0] <- "0 - Monday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==2] <- "2 - Wednesday"
+email_metric_with_sales$day_of_week[email_metric_with_sales$day_of_week==4] <- "4 - Friday"
+
+write.csv(email_metric_with_sales, "data.csv")
+
+pre_march <- email_metric_with_sales[email_metric_with_sales$before_march == "True",]
+post_march <- email_metric_with_sales[email_metric_with_sales$before_march == "False",]
+
+open_tone <- email_metric_with_sales[,c('group', 'opens_rate')]
+click_tone <- email_metric_with_sales[,c('group', 'clicks_rate')]
+open_to_click_tone <- email_metric_with_sales[,c('group', 'open_to_click_rate')]
+unsub_tone <- email_metric_with_sales[,c('group', 'unsub_rate')]
+order_tone <- email_metric_with_sales[,c('group', 'orders_rate')]
+sales_tone <- pre_march[,c('group','sales_amount')]
+
+
+open_day <- post_march[,c('day_of_week', 'opens_rate')]
+click_day <- post_march[,c('day_of_week', 'clicks_rate')]
+open_to_click_day <- post_march[,c('day_of_week', 'open_to_click_rate')]
+unsub_day <- post_march[,c('day_of_week', 'unsub_rate')]
+order_day <- post_march[,c('day_of_week', 'orders_rate')]
+sales_day <- post_march[,c('day_of_week','sales_amount')]
+
+
+```
+
+# Open Rate Tests for Tone
+
+## Histogram of Open Rate Tone
+
+```{r}
+hist(open_tone$opens_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open rates for email tone.
+
+## Shapiro test for normality on Open Rate Tone
+
+```{r}
+shapiro.test(open_tone$opens_rate)
+```
+
+Shapiro test p-value \> 0.05, meaning it is not normally distributed data for the open rates.
+
+## Q-Q Plot for normality on Open Rate Tone
+
+```{r}
+qqnorm(open_tone$opens_rate)
+qqline(open_tone$opens_rate, col = "red")
+```
+
+The Q-Q Plot shows how well open rate data follows a normal distribution. Deviations at the ends mean there could be skewness or outliers which suggests some non-normality in the data.
+
+The core of the data is normal where the middle values closely follow the normal distribution line.
+
+## Levene's Test of Open Rate Tone
+
+```{r}
+library(car)
+
+leveneTest(opens_rate ~ group,
+           data = open_tone)
+```
+
+Levene's test indicates equal variances in the open rate for tone groups since the p-value \> 0.05.
+
+## Perform T-Test on Open Rate Tone
+
+```{r}
+t.test(opens_rate ~ group, 
+       data = open_tone, 
+       var.equal = TRUE)
+```
+
+When running the two sample t-test, the p-value is \< 0.05 so there is a statistically significant difference between the open rates of the two email tone groups. We reject the null hypothesis.
+
+# Open Rate Analysis For Tone
+
+The analysis of open rate by email tone is based on data collected before March 2004. The statistical tests indicate that email tone (Alarming vs. Conversational) had a significant effect on open rates, despite the limited sample size (\< 30 per group).
+
+A histogram initially suggested that open rates were not normally distributed. To formally assess normality, the Shapiro-Wilk test returned p \> 0.05, indicating that the data does not significantly deviate from normality. However, the results from the histogram and Shapiro-Wilk test were contradictory, which may be due to the small sample size. To further confirm, a Q-Q plot was generated to visualize the distribution. The middle values align closely with the normal distribution, but deviations at both tails suggest some skewness or potential outliers, reinforcing the non-normality observed in the histogram.
+
+The Levene’s test confirmed that the two tone groups had equal variance (p \> 0.05), allowing the use of a two-sample T-test. The T-test result (p \< 0.05) confirmed a statistically significant difference in open rates between the two tones. This allows us to reject the null hypothesis, concluding that email tone significantly affected open rates.
+
+# Open Rate Tests for Day of Week
+
+## Histogram of Open Rate Day of Week
+
+```{r}
+hist(open_day$opens_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open rate data for the weekdays.
+
+## Shapiro's Test of Normality for Open Rate Day of Week
+
+```{r}
+shapiro.test(open_day$opens_rate)
+```
+
+It is not normally distributed data (P \< 0.05) for open rates of emails by day of week.
+
+## Q-Q Plot for normality on Open Rate Day of Week
+
+```{r}
+qqnorm(open_day$opens_rate)
+qqline(open_day$opens_rate, col = "red")
+```
+
+The Q-Q plot shows deviation and skewedness, indicating non-normality. The lower tail on the left side has a cluster of points, suggesting a floor effect with many zero values, meaning some emails had very low open rates. The upper tail shows potential outliers, where a few emails had exceptionally high open rates. While the middle values somewhat follow the normal distribution line, the significant deviations in the tails confirm that the data is not normally distributed.
+
+## Kruskal-Wallis Test for Open Rate Day of Week
+
+```{r}
+kruskal.test(opens_rate ~ day_of_week, 
+             data = open_day)
+```
+
+The non-parametric Kruskal-Wallis Test resulted in p-value \< 0.05, indicating a statistically significant difference in open rates across at least one day of the week. This confirms that the day an email is sent influences open rates.
+
+# Open Rate Analysis for Day of Week
+
+The analysis of open rate by day of the week is based on data collected post-March 2004. The statistical tests show a significant variation in open rates across different weekdays, indicating that the day an email is sent can affect engagement levels.
+
+The histogram revealed skewnessed and variability in open rates across different days, indicating a deviation from normality. The Shapiro-Wilk test was run to check normality, and returned p \< 0.05, indicating that the data does not follow a normal distribution. Since the histogram and normality test aligned in indicating non-normality, a Q-Q plot was generated for further verification. The middle values align relatively close to the the normal distribution, but deviations at the tails indicate potential skewness and outliers, further confirming the non-normality observed in the histogram.
+
+Given the non-normal distribution of open rates across weekdays, the non-parametric Kruskal-Wallis test was performed to determine whether there were significant differences between the days. The result (p \< 0.05) confirmed a statistically significant difference in open rates across at least one weekday. Similar to the open rate for email tone, we reject the null hypothesis, meaning that the day an email is sent significantly affects open rates.
+
+```{r}
+library(ggplot2)
+opentoneData <- open_tone %>% 
+    group_by(group) %>%
+    summarize(n=n(),
+              mean = mean(opens_rate),
+              se = sd(opens_rate)/sqrt(n))  
+opentoneData
+
+ggplot(opentoneData, aes(x=group, y=mean, fill=group)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "Alarming Approach" = "#E63946",  # Warm red
+    "Conversational Approach" = "#457B9D"   # Cool blue
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Open Rate Based on Tone",
+       x="Group",                             
+       y="Average Open Rate")
+
+
+
+opendatData <- open_day %>% 
+    group_by(day_of_week) %>%
+    summarize(n=n(),
+              mean = mean(opens_rate),
+              se = sd(opens_rate)/sqrt(n))  
+opendatData
+
+ggplot(opendatData, aes(x=day_of_week, y=mean, fill=day_of_week)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Open Rate Based on Day",
+       x="Day of Week",                             
+       y="Average Open Rate")
+
+```
+
+# Click Rate Tests for Tone
+
+## Histogram of Click Rate Tone
+
+```{r}
+hist(click_tone$clicks_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of click rates for email tone.
+
+## Shapiro test for normality on Click Rate Tone
+
+```{r}
+shapiro.test(click_tone$clicks_rate)
+```
+
+The Shapiro-Wilk test checks whether the click_rate data is normally distributed. The p-value is much less than 0.05, indicating that the data significantly deviates from a normal distribution. This suggests that the click_rate data is not normally distributed.
+
+## Q-Q Plot for normality on Click Rate Tone
+
+```{r}
+qqnorm(click_tone$clicks_rate)
+qqline(click_tone$clicks_rate, col = "red")
+```
+
+The Q-Q Plot shows how well open rate data follows a normal distribution. Deviations at the ends mean there could be skewness or outliers which suggests some non-normality in the data. The core of the data is normal where the middle values closely follow the normal distribution line. A lot of the emails contain zero clicks at all suggesting a large portion of the data is not being represented correctly.
+
+## Levene's Test of Click Rate Tone
+
+```{r}
+library(car)
+leveneTest(clicks_rate ~ group, data = click_tone)
+```
+
+Levene's test checks whether the variances of click_rate are equal across the two groups (Alarming Approach and Conversational Approach). The p-value (0.5551) is greater than 0.05, indicating that the variances are not significantly different between the two groups. This means the assumption of equal variances for the t-test is satisfied.
+
+## Perform T-Test on Click Rate Tone
+
+```{r}
+t.test(clicks_rate ~ group, data = click_tone, var.equal = TRUE)
+```
+
+The t-test compares the mean click_rate between the two groups. The p-value (0.1035) is greater than 0.05, indicating that there is no statistically significant difference in click rates between the Alarming Approach and Conversational Approach. The 95% confidence interval includes 0, further supporting the conclusion that there is no significant difference in click rates between the two groups.
+
+# Click Rate Analysis For Tone
+
+The Shapiro-Wilk test, Q-Q plot, and histogram indicate that the click_rate data is not normally distributed. This is important because the t-test assumes normality, especially for small sample sizes. However, the t-test is relatively robust to violations of normality when sample sizes are large (in this case, df = 101, which is large enough). Levene's test confirms that the variances of click_rate are equal across the two groups, satisfying one of the key assumptions of the t-test. The t-test results show that there is no statistically significant difference in click rates between the Alarming Approach and Conversational Approach (p = 0.1035). This means that the email tone (alarming vs. conversational) does not significantly affect the click rate. The mean click rate for the Conversational Approach (4.08%) is slightly higher than the Alarming Approach (3.26%), but this difference is not statistically significant. While the Conversational Approach has a slightly higher click rate, the difference is not large enough to conclude that one tone is definitively better than the other in terms of driving clicks.
+
+# Click Rate Tests for Day of Week
+
+## Histogram of Click Rate Day of Week
+
+```{r}
+hist(click_day$clicks_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of click rate data for the weekdays.
+
+## Shapiro's Test of Normality for Click Rate Day of Week
+
+```{r}
+shapiro.test(click_day$clicks_rate)
+```
+
+The Shapiro-Wilk test was used to check if the click rate data is normally distributed.The p-value is much less than 0.05, indicating that the click rate data significantly deviates from a normal distribution. This suggests that the click rate data is not normally distributed, which justifies the use of non-parametric tests for further analysis.
+
+## Q-Q Plot for normality on Click Rate Day of Week
+
+```{r}
+qqnorm(click_day$clicks_rate)
+qqline(click_day$clicks_rate, col = "red")
+```
+
+The Q-Q plot shows deviation and skewedness, indicating non-normality. The lower tail on the left side has a cluster of points, suggesting a floor effect with many zero values, meaning some emails had very low click rates. The upper tail shows potential outliers, where a few emails had exceptionally high open rates. While the middle values somewhat follow the normal distribution line, the significant deviations in the tails confirm that the data is not normally distributed.
+
+## Kruskal-Wallis Test for Click Rate Day of Week
+
+```{r}
+kruskal.test(clicks_rate ~ day_of_week, data = click_day)
+```
+
+The Kruskal-Wallis test is a non-parametric test used to compare the medians of three or more groups (in this case, click rates across three weekdays). The p-value (0.02999) is less than the 0.05 significance level, indicating that there is a statistically significant difference in click rates across at least one of the weekdays. This means that the day an email is sent significantly affects click rates.
+
+# Click Rate Analysis for Day of Week
+
+The Shapiro-Wilk test confirmed that the click rate data is not normally distributed, which aligns with the histogram's indication of skewness or outliers. This non-normality necessitated the use of non-parametric tests, such as the Kruskal-Wallis test, for further analysis.The Kruskal-Wallis test revealed a statistically significant difference in click rates across the three weekdays (Monday, Wednesday, and Friday). This suggests that the day an email is sent plays a role in influencing click rates. While the test does not specify which specific days differ, it indicates that at least one weekday has a significantly different click rate compared to the others.The p-value (0.02999) is less than the 0.05 significance level, indicating that there is a statistically significant difference in click rates across at least one of the weekdays.This means that the day an email is sent significantly affects click rates. Monday vs. Wednesday:Monday has a significantly higher click rate (4.71%) compared to Wednesday (2.77%). This difference is likely statistically significant (p \< 0.05).
+
+Monday vs. Friday: Monday also has a significantly higher click rate (4.71%) compared to Friday (2.71%).This difference is likely statistically significant (p \< 0.05).
+
+Wednesday vs. Friday: The click rates for Wednesday (2.77%) and Friday (2.71%) are very similar. This difference is likely not statistically significant (p \> 0.05).
+
+The analysis of click rates by weekday revealed that the day an email is sent significantly affects click rates. The Kruskal-Wallis test confirmed a statistically significant difference in click rates across Monday, Wednesday, and Friday (p = 0.02999). While the data was not normally distributed, the use of non-parametric tests ensured the validity of the results. These findings suggest that email campaigns should consider the day of the week as a key factor in optimizing click rates. Further investigation into specific weekday differences and other influencing factors (e.g., email content, timing) is recommended to refine email strategies and improve engagement.
+
+```{r}
+library(ggplot2)
+clicktoneData <- click_tone %>% 
+    group_by(group) %>%
+    summarize(n=n(),
+              mean = mean(clicks_rate),
+              se = sd(clicks_rate)/sqrt(n))  
+
+ggplot(clicktoneData, aes(x=group, y=mean, fill=group)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "Alarming Approach" = "#E63946",  # Warm red
+    "Conversational Approach" = "#457B9D"   # Cool blue
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Click Rate Based on Tone",
+       x="Group",                             
+       y="Average Click Rate")
+
+
+clickdayData <- click_day %>% 
+    group_by(day_of_week) %>%
+    summarize(n=n(),
+              mean = mean(clicks_rate),
+              se = sd(clicks_rate)/sqrt(n))  
+clickdayData
+
+ggplot(clickdayData, aes(x=day_of_week, y=mean, fill=day_of_week)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Click Rate Based on Day",
+       x="Day of Week",                             
+       y="Average Click Rate")
+
+```
+
+# Open_to_Click Rate Tests for Tone
+
+## Histogram of Open_to_Click Rate Tone
+
+```{r}
+hist(open_to_click_tone$open_to_click_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open_to_click rates for email tone.
+
+## Shapiro test for normality on Open_to_Click Rate Tone
+
+```{r}
+shapiro.test(open_to_click_tone$open_to_click_rate)
+```
+
+The Shapiro-Wilk test indicates that the open-to-click rate data is not normally distributed (p \< 0.05). This non-normality suggests that parametric tests (e.g., t-test) may not be appropriate unless the sample size is large enough. \## Q-Q Plot for normality on Open to Click Rate Tone
+
+```{r}
+qqnorm(open_to_click_tone$open_to_click_rate)
+qqline(open_to_click_tone$open_to_click_rate, col = "red")
+```
+
+The Q-Q Plot shows how well open rate data follows a normal distribution. Deviations at the ends mean there could be skewness or outliers which suggests some non-normality in the data. The core of the data is normal where the middle values closely follow the normal distribution line. A lot of the emails contain zero clicks at all suggesting a large portion of the data is not being represented correctly.
+
+## Levene's Test of Open to Click Rate Tone
+
+```{r}
+library(car)
+leveneTest(open_to_click_rate ~ group, data = open_to_click_tone)
+```
+
+Levene's test checks whether the variances of open-to-click rates are equal across the two tone groups. The p-value (0.6272) is greater than 0.05, indicating that the variances are not significantly different between the two groups. This satisfies the assumption of equal variances for the t-test.
+
+## Perform T-Test on Open to Click Rate Tone
+
+```{r}
+t.test(open_to_click_rate ~ group, data = open_to_click_tone, var.equal = TRUE)
+```
+
+The t-test compares the mean open-to-click rates between the two tone groups. The p-value (0.006931) is less than 0.05, indicating a statistically significant difference in open-to-click rates between the Alarming Approach and Conversational Approach. The 95% confidence interval does not include 0, further supporting the conclusion that the difference is significant. The Conversational Approach has a significantly higher open-to-click rate (56.62%) compared to the Alarming Approach (35.95%).
+
+# Open to Click Rate Analysis For Tone
+
+Null hypothesis rejected: There is a statistically significant difference in open-to-click rates between the Alarming Approach and Conversational Approach. The Conversational Approach is more effective at driving engagement (clicks) after recipients open the email. This suggests that a conversational tone resonates better with recipients, encouraging them to take action after opening the email.
+
+# Open to Click Rate Tests for Day of Week
+
+## Histogram of Open to Click Rate Day of Week
+
+```{r}
+hist(open_to_click_day$open_to_click_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of open to click rate data for the weekdays.
+
+## Shapiro's Test of Normality for Open to Click Rate Day of Week
+
+```{r}
+shapiro.test(open_to_click_day$open_to_click_rate)
+```
+
+The Shapiro-Wilk test confirms that the open-to-click rate data is not normally distributed (p \< 0.05). This justifies the use of non-parametric tests for further analysis. \## Q-Q Plot for normality on Open to Click Rate Day of Week
+
+```{r}
+qqnorm(open_to_click_day$open_to_click_rate)
+qqline(open_to_click_day$open_to_click_rate, col = "red")
+```
+
+The Q-Q plot shows deviation and skewedness, indicating non-normality. The lower tail on the left side has a cluster of points, suggesting a floor effect with many zero values, meaning some emails had very low click rates. The upper tail shows another floor of emails that were likely already clicked on if they so they count as 1.00 for a opened and clicked email. \## Kruskal-Wallis Test for Open to Click Rate Day of Week
+
+```{r}
+kruskal.test(open_to_click_rate ~ day_of_week, data = open_to_click_day)
+```
+
+The Kruskal-Wallis test compares the medians of open-to-click rates across the three weekdays.The p-value (0.8641) is greater than 0.05, indicating that there is no statistically significant difference in open-to-click rates across Monday, Wednesday, and Friday. This means that the day an email is sent does not significantly affect the open-to-click rate
+
+# Open_to_Click Rate Analysis for Day of Week
+
+Null hypothesis not rejected: There is no statistically significant difference in open-to-click rates across the three weekdays. The day of the week does not appear to influence how likely recipients are to click on an email after opening it.
+
+```{r}
+library(ggplot2)
+openetoclicktoneData <- open_to_click_tone %>% 
+    group_by(group) %>%
+    summarize(n=n(),
+              mean = mean(open_to_click_rate),
+              se = sd(open_to_click_rate)/sqrt(n))  
+
+ggplot(openetoclicktoneData, aes(x=group, y=mean, fill=group)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "Alarming Approach" = "#E63946",  # Warm red
+    "Conversational Approach" = "#457B9D"   # Cool blue
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Open to Click Rate Based on Tone",
+       x="Group",                             
+       y="Average Open to Click Rate")
+
+openetoclickdayData <- open_to_click_day %>% 
+    group_by(day_of_week) %>%
+    summarize(n=n(),
+              mean = mean(open_to_click_rate),
+              se = sd(open_to_click_rate)/sqrt(n))  
+openetoclickdayData
+
+ggplot(openetoclickdayData, aes(x=day_of_week, y=mean, fill=day_of_week)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Open to Click Rate Based on Day",
+       x="Day of Week",                             
+       y="Average Click Rate")
+
+```
+
+```{r}
+library(ggplot2)
+unsubtoneData <- unsub_tone %>% 
+    group_by(group) %>%
+    summarize(n=n(),
+              mean = mean(unsub_rate),
+              se = sd(unsub_rate)/sqrt(n))  
+
+ggplot(unsubtoneData, aes(x=group, y=mean, fill=group)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "Alarming Approach" = "#E63946",  # Warm red
+    "Conversational Approach" = "#457B9D"   # Cool blue
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Unsubcribe Rate Based on Tone",
+       x="Tone",                             
+       y="Average Unsubscribe Rate")
+
+
+unsubdayData <- unsub_day %>% 
+    group_by(day_of_week) %>%
+    summarize(n=n(),
+              mean = mean(unsub_rate),
+              se = sd(unsub_rate)/sqrt(n))  
+
+ggplot(unsubdayData, aes(x=day_of_week, y=mean, fill=day_of_week)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Unsub Rate Based on Day",
+       x="Day of Week",                             
+       y="Average Unsub Rate")
+
+```
+
+# Order Rate Tests for Tone
+
+```{r}
+# Pre-March (Tone Analysis)
+order_rate_tone <- pre_march[,c('group','orders_rate')]
+
+# Post-March (Day of the Week Analysis)
+order_rate_day <- post_march[,c('day_of_week','orders_rate')]
+```
+
+## Histogram for Order Rate Tone
+
+```{r}
+hist(order_rate_tone$orders_rate, breaks = 20)
+```
+
+Indicates a non normal distribution for the order rates.
+
+## Shapiro test for normality for Order Rate Tone
+
+```{r}
+shapiro.test(order_rate_tone$orders_rate)
+```
+
+The Shapiro test reveals a non normal distribution with p-value \< 0.05 of order rate data for email tone.
+
+## Q-Q Plot for normality on Order Rate Tone
+
+```{r}
+qqnorm(order_rate_tone$orders_rate)
+qqline(order_rate_tone$orders_rate, col = "red")
+```
+
+The Q-Q plot shows that it is a non-normal distribution. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+## Krusal-Wallis Test for Order Rate Tone
+
+```{r}
+kruskal.test(orders_rate ~ group,
+             data = order_rate_tone)
+```
+
+The Kruskal-Wallis Test shows a p-value that is \> 0.05 so it is not statistically significant that the tone affects the order rate for emails.
+
+# Order Rate Analysis for Tone
+
+The analysis of order rate by email tone is based on data collected before March 2004. The statistical tests indicate that email tone (Alarming vs. Conversational) did not have a statistically significant effect on order rates, as shown by the Kruskal-Wallis test (p \> 0.05).
+
+The histogram suggests variations in distribution, where order rates did not follow a normal pattern showing skewness and variability in the data. The Shapiro-Wilk test resulted in p \< 0.05, further confirming that the order rate data deviates from a normal distribution. Since both the histogram and normality test indicated non-normality, a Q-Q plot was generated for further visualization. The plot showed that while middle values loosely follow the normal line, the tails deviate significantly. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+Given the non-normality of the data, a Kruskal-Wallis test was performed. The test returned p \> 0.05, indicating that there is no statistically significant difference in order rates between the two email tones. Since the p-value exceeded 0.05, there is insufficient evidence to suggest that email tone had a significant impact on order rates.
+
+# Order Rate Tests for Day of Week
+
+## Histogram for Order Rate Day of Week
+
+```{r}
+hist(order_rate_day$orders_rate, breaks = 20)
+```
+
+Indicates a non normal distribution of order rate data for email tone.
+
+## Shapiro test for normality for Order Rate Day of Week
+
+```{r}
+shapiro.test(order_rate_day$orders_rate)
+```
+
+Indicates that it is not normally distributed data with a p-value \< 0.05.
+
+## Q-Q Plot for normality on Order Rate Day of Week
+
+```{r}
+qqnorm(order_rate_day$orders_rate)
+qqline(order_rate_day$orders_rate, col = "red")
+```
+
+The Q-Q plot shows that it is a non-normal distribution. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights outliers, indicating a few emails had exceptionally high order rates.
+
+## Kruskal-Wallis Test for Order Rate Day of Week
+
+```{r}
+kruskal.test(orders_rate ~ day_of_week, data = order_rate_day)
+```
+
+The Kruskal-Wallis Test gives a p-value \> 0.05 so we fail to reject the null hypothesis, there is no significance in the order rates to the days of the week the email is sent.
+
+# Order Rate Analysis for Day of Week
+
+The analysis of order rate by day of the week is based on data collected post-March 2004. Statistical tests reveal no significant relationship between the day an email is sent and order rates, as indicated by the Kruskal-Wallis test (p \> 0.05).
+
+The histogram displayed a non-normal distribution of order rates, with visible skewness and variability across different days. To formally test for normality, the Shapiro-Wilk test returned p \< 0.05, confirming that the order rate data does not follow a normal distribution. Since both the histogram and normality test suggested non-normality, a Q-Q plot was generated for further assessment. The plot indicated that while middle values loosely follow the normal line, significant deviations at both tails suggest skewness and the presence of outliers. The left tail clusters near zero, suggesting a floor effect, while the right tail highlights potential outliers, indicating a few emails had exceptionally high order rates.
+
+Given the non-normality of the data, a Kruskal-Wallis test was conducted and returned p \> 0.05, indicating no statistically significant difference in order rates across weekdays. Therefore, we fail to reject the null hypothesis, concluding that the day an email is sent does not significantly impact order rates.
+
+```{r}
+library(ggplot2)
+ordertoneData <- order_tone %>% 
+    group_by(group) %>%
+    summarize(n=n(),
+              mean = mean(orders_rate),
+              se = sd(orders_rate)/sqrt(n))  
+
+ggplot(ordertoneData, aes(x=group, y=mean, fill=group)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "Alarming Approach" = "#E63946",  # Warm red
+    "Conversational Approach" = "#457B9D"   # Cool blue
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Orders Rate Based on Tone",
+       x="Tone",                             
+       y="Average Order Rate")
+
+orderdayData <- order_day %>% 
+    group_by(day_of_week) %>%
+    summarize(n=n(),
+              mean = mean(orders_rate),
+              se = sd(orders_rate)/sqrt(n))  
+orderdayData
+
+ggplot(orderdayData, aes(x=day_of_week, y=mean, fill=day_of_week)) + geom_bar(stat="identity") +
+    scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  labs(title="Order Rate Based on Day",
+       x="Day of Week",                             
+       y="Average Order Rate")
+```
+
+```{r}
+library(ggplot2)
+summed_sales_data <- sales_tone %>%
+  group_by(group) %>%
+  summarize(salestotal = sum(sales_amount))
+
+ggplot(summed_sales_data, aes(x=group, y=salestotal, fill=group)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("Alarming Approach" = "#E63946", "Conversational Approach" = "#457B9D")) +  
+  labs(title="Total Sales by Tone",
+       x="Tone",
+       y="Total Sales")
+
+summed_sales_data <- sales_day%>%
+  group_by(day_of_week) %>%
+  summarize(salestotal = sum(sales_amount))
+
+ggplot(summed_sales_data, aes(x=day_of_week, y=salestotal, fill=day_of_week)) +
+  geom_bar(stat="identity") +
+      scale_fill_manual(values=c(
+    "0 - Monday" = "#F4A261",  # Warm Orange  
+    "2 - Wednesday" = "#2A9D8F",  # Teal  
+    "4 - Friday" = "#8A508F"   # Muted Purple
+  )) +  
+  labs(title="Total Sales by Week of Day",
+       x="Tone",
+       y="Total Sales")
+```
+
+Levene's test indicates not equal variances in sales data between tone groups
+
+Histogram of sales data for pre march
+
+```{r}
+hist(sales_tone$sales)
+```
+
+Indicates a non normal distribution of sales data
+
+Therefore a t test cannot be used as the base assumptions are violated
+
+Instead we will run a Run Mann whitney u test on data (due to non parametric nature)
+
+```{r}
+res <- wilcox.test(sales_amount ~ group, data = sales_tone,
+                   exact = FALSE)
+res
+```
+
+our null hypothesis cannot be rejected at the 0.05 significance level for the differences in sale means limited sample size due to limiting data to pre march The mann whitney U test does not indicate rejection of the hypothesis at the proposed significance level
+
+box plot of sales vs tone
+
+```{r}
+boxplot(sales_amount ~ group,data=sales_tone, main="Sales by Email Tone",
+        col=(c("blue","orange")),
+   xlab="Email group", ylab="Sales amount (USD)")
+```
+
+Visually a difference can be observed, but more data is needed to confirm statistical significance of observed differences.
+
+Histogram of sales data for pre march
+
+```{r}
+hist(sales_day$sales_amount)
+```
+
+Histogram indicates non normal distribution of sales amounts post march
+
+Therefore an Anova is inappropriate to run as the base assumptions are violated
+
+Instead we will run a Kruskal Wallis test (for non parametric data as observed)
+
+```{r}
+kruskal.test(sales_amount ~ day_of_week, data = sales_day)
+```
+
+Via Kruskal Wallis test for non normally distributed data our null hypothesis cannot be rejected at the 0.05 significance level for the differences in sale means due to day of the week. box plot of sales vs day of week
+
+```{r}
+boxplot(sales_amount ~ day_of_week,data=sales_day, main="Sales by Day of Week",
+        col=(c("yellow","orange","red")),
+   xlab="Day of week", ylab="Sales amount (USD)")
+```
+
+Significant outliers are present in the sales data for Monday, while Friday's averages seem higher volume with fewer significant outliers. Collaboration with sales/ordering department recommended to identify if underlying patterns are consistent with past sales data, or are affected significantly by day of marketing email.
+
+prep data for unsubscribe analysis
+
+```{r}
+unsubscribe_tone <- pre_march[,c('group','unsub_rate')]
+unsubscribe_day <- post_march[,c('day_of_week','unsub_rate')]
+```
+
+analysis on unsubscribe rate vs tone
+
+Histogram of num unsubscribed pre march
+
+```{r}
+hist(unsubscribe_tone$unsub_rate)
+```
+
+Distribution is non normal and sample size is small
+
+Therefore a t test is in appropriate to run on the data, as its base assumptions are violated
+
+Instead Run wilcox test to generate the Mann whitney u on the data (due to non parametric nature)
+
+```{r}
+res <- wilcox.test(unsub_rate ~ group, data = unsubscribe_tone,
+                   exact = FALSE)
+res
+```
+
+The null hypothesis that there is not an effect on number of unsubscriptions based on tone can be rejected at the 0.05 confidence interval
+
+Indicating that the alternative hypothesis, that there is an effect on the number of unsubscriptions by email approach/tone, can be accepted.
+
+Box Plot of Tone vs unsub_rate
+
+```{r}
+boxplot(unsub_rate ~ group, data = unsubscribe_tone, main="Unsubscribe rate by Email Tone",
+        col=(c("blue","orange")),
+   xlab="Email group", ylab="Unsubscribe rate")
+```
+
+It can be seen that the conversational approach generated very few unsubscriptions (1), while the unsubscription rate for the alarming approach was higher and statistically significant. We would reccommend not pursuing utilization of the alarming approach in our email marketing.
+
+analysis on unsubscribe rate vs day of week
+
+Histogram of unsubscribe rate post march
+
+```{r}
+hist(unsubscribe_day$unsub_rate)
+```
+
+Distribution is non normal and sample size is medium
+
+We will run a Kruskal Wallis test (for non parametric data as observed)
+
+```{r}
+kruskal.test(unsub_rate ~ day_of_week, data = unsubscribe_day)
+```
+
+Via Kruskal Wallis test for non normally distributed data our null hypothesis cannot be rejected at the 0.05 significance level for the differences in unsubscriptions due to day of the week.
+
+box plot of unsubscriptions vs day of week
+
+```{r}
+boxplot(unsub_rate ~ day_of_week, data = unsubscribe_day, main="Unsubscribe rate by Day of Week",
+        col=(c("yellow","orange","red")),
+   xlab="Day of week", ylab="unsubscribe Rate")
+```
+
+The effect of the day of the week on unsubscriptions appears to be minimal, and not statistically significant within our sample.
+
+Future exploration Power analysis of pre march sales data (by tone) -- intended T test Throughout the following explorations for T test, although cohen's d is appropriate only for normal distributions, it has been used to provide an estimate for the expected effect size when running a t test on normally distributed data, it is difficult to tell whether the data we end up with will be normally distributed, so this is a rough approximation, and serves only as a guideline for the size of data set we should be gathering in order to arrive at more informative conclusions.
+
+For Anova, Eta\*\*2 was used as the effect size estimation, applying similar logic to the T test in attempting to estimate an appropriate sample size.
+
+```{r}
+length(sales_tone$sales_amount)
+library(effectsize)
+cohens_d(sales_amount ~ group, data = sales_tone)
+```
+
+```{r}
+library(pwr)
+pwr.t.test(d = -0.29, power = 0.8,
+           sig.level = 0.05,
+           type = "two.sample",
+           alternative = "two.sided")
+```
+
+We can estimate a desired sample size of 188 per group or 396
+
+Power analysis of post march sales data (by day) -- intended test Anova
+
+```{r}
+# Compute the analysis of variance
+res.aov <- aov(sales_amount ~ day_of_week, data = sales_day)
+# Summary of the analysis
+summary(res.aov)
+```
+
+```{r}
+length(sales_tone$sales_amount)
+library(effectsize)
+m <- lm(sales_amount ~ day_of_week, data = sales_day)
+eta_squared(m, partial = FALSE)
+
+```
+
+Very small effect size
+
+```{r}
+power.anova.test(groups = 3, n = NULL,
+                 between.var = 3.964e+08, within.var = 1.722e+10,
+                 sig.level = 0.05, power = 0.8)
+```
+
+We can estimate a desired sample size of 211 per group or 633
+
+Power analysis of pre march unsubscribe data (by tone) -- intended T test
+
+```{r}
+length(unsubscribe_tone$unsub_rate)
+library(effectsize)
+cohens_d(unsub_rate ~ group, data = unsubscribe_tone)
+```
+
+```{r}
+library(pwr)
+pwr.t.test(d = 1.5, power = 0.8,
+           sig.level = 0.05,
+           type = "two.sample",
+           alternative = "two.sided")
+```
+
+We can estimate a desired sample size of 9 per group or 18, which is fulfilled by our sample (although not normally distributed), and reflected in the rejection of the null hypothesis.
+
+Power analysis of post march unsubscribe data (by day) -- intended test Anova
+
+```{r}
+# Compute the analysis of variance
+res.aov <- aov(unsub_rate ~ day_of_week, data = unsubscribe_day)
+# Summary of the analysis
+summary(res.aov)
+```
+
+```{r}
+length(unsubscribe_day$unsub_rate)
+library(effectsize)
+m <- lm(unsub_rate ~ day_of_week, data = unsubscribe_day)
+eta_squared(m, partial = FALSE)
+```
+
+Very small effect size
+
+```{r}
+power.anova.test(groups = 3, n = NULL,
+                 between.var = 0.00037, within.var = 0.03554,
+                 sig.level = 0.05, power = 0.8)
+```
+
+We can estimate a desired sample size of 464 per group or 1392
+
+Written Analysis for Unsubscribe Rate
+
+By Email Approach/Tone
+
+In order to avoid compounding factors in the data, the analysis on tone effects on unsubscribe rate were limited to the data set gathered before March. This allowed analysis of a single factor across a single season, and avoided dealing with data collected from different days, which due to the differing nature of the data sets, and the limited data available, would have required potentially biased assumptions on the part of the data team, and brought into question the validity of any results found.
+
+There was a statistically significant difference between the approach groups, even in the limited pre-march sample size. With a histogram we can observe the non-normal distribution of the unsubscribe rate data, and determine the applicability of a Wilcoxon rank sum test addressing the medians. This results in a p value of 0.001045, allowing rejection of the null hypothesis at the 0.05 significance level selected for these tests.
+
+Null hypothesis rejected – statistically significant results even with small sample size. Data not normally distributed so nonparametric tests were used. T test power analysis was performed to identify an appropriate sample size using Cohen's D as an approximation for effect size, and a t power test to identify an appropriate group size if the data were normally distributed (these results are not statistically valid, and are used only to recommend a goal sample size in future experiments assuming a normal distribution of the data, which is not present in the current data). A minimum number of 9 samples per group was the result of the exploration, which aligns with the Wilcoxon rank sum test finding statistical significance even in the small sample size. Further testing is likely not warranted in this area, and focus should be on smaller tonal variances/or on the content of the email, for the sake of not losing clients unnecessarily while performing data gathering.
+
+By Day of Week
+
+In order to avoid compounding factors in the data, the analysis on day of the week effects on unsubscribe rate were limited to the data set gathered after March. This allowed us to avoid weighting the data too heavily with Wednesdays, especially considering the different quarter/season of all the Wednesdays pre-March.
+
+The data for the unsubscribe rate compared to day of the week can be viewed using a histogram and a non-normal distribution identified. This encourages use of a Kruskal-Wallis rank sum test for non-parametric data. Based on the p value of 0.5339, the null hypothesis of there being no difference between unsubscription rates based on days of the week cannot be rejected at the 0.05 significance level. Power analysis was performed with anova using between and within variation estimation (again, on the non normally distributed data, hence the invalid nature of the statistical results). The effect size was estimate using eta - squared run on a linear model fit to the data, and is similarly statistically invalid, but can be observed to align with the large group size identified by the power test as necessary to confidently draw a conclusion on a normally distributed dataset reflecting the between and within variations of the unsubscription rate by day data.
+
+The estimated sample size to have sufficient power and p value to reject or accept the null hypothesis was 464 per group or 1392 total. Much larger than our existing dataset, and potentially difficult to achieve with existing customer base due to B2B nature of the business, which paired with the very small estimated effect size may warrant a more focused approach and further domain specific investigations before designing further experiments around day of the week testing. The unsubscribe rate is important, but based on exploratory analysis, appears to be minimally influenced by the day of the week, and gathering sufficient data to generate a more confident analysis would require a larger customer base.
+
+Written Analysis for Sale Amount
+
+By Email Tone
+
+In order to avoid compounding factors in the data, the analysis on tone effects on sale amount were limited to the data set gathered before March. This allowed analysis of a single factor across a single season, and avoided dealing with data collected from different days, which due to the differing nature of the data sets, and the limited data available, would have required potentially biased assumptions on the part of the data team, and brought into question the validity of any results found.
+
+There was not a statistically significant difference between the approach groups in sale amount. With a histogram we can observe the non-normal distribution of the unsubscribe rate data, and determine the applicability of a Wilcoxon rank sum test addressing the medians. This results in a p value of 0.4582, not allowing rejection of the null hypothesis at the 0.05 significance level selected for these tests.
+
+Null hypothesis not rejected – not statistically significant results. Data not normally distributed so nonparametric tests were used. T test power analysis was performed to identify an appropriate sample size using Cohen's D as an approximation for effect size, and a t power test to identify an appropriate group size if the data were normally distributed (these results are not statistically valid, and are used only to recommend a goal sample size in future experiments assuming a normal distribution of the data, which is not present in the current data). A minimum number of 188 samples per group or 396 total was the result of the exploration. Due to the ability to run multiple email groups simultaneously, this sample size is more achievable, as by running 10 separate email groups, 5 of each approach/tone, sufficient data could be gathered in 19 weeks. There is a visible pattern in the data indicating increased sales for the less aggressive tone, but it cannot be identified as statistically significant without further testing.
+
+By Day of Week
+
+In order to avoid compounding factors in the data, the analysis on day of the week effects on sales amount were limited to the data set gathered after March. This allowed us to avoid weighting the data too heavily with Wednesdays, especially considering the different quarter/season of all the Wednesdays pre-March.
+
+The data for the sales amount compared to day of the week can be viewed using a histogram and a non-normal distribution identified. This encourages use of a Kruskal-Wallis rank sum test for non-parametric data. Based on the p value of 0.2238, the null hypothesis of there being no difference between sales amounts based on days of the week cannot be rejected at the 0.05 significance level. Power analysis was performed with anova using between and within variation estimation (again, on the non normally distributed data, hence the invalid nature of the statistical results). The effect size was estimate using eta - squared run on a linear model fit to the data, and is similarly statistically invalid, but can be observed to align with the large group size identified by the power test as necessary to confidently draw a conclusion on a normally distributed dataset reflecting the between and within variations of the sales amount by day data. The estimated sample size to have sufficient power value of 0.8 and p value of 0.05 to reject or accept the null hypothesis with minimal type 1 and type 2 errors was 211 per group or 633 total. This would require four years to gather sufficient samples with a single set of Monday, Wednesday, Friday email groups, and due to a limited client/email list, a recommendation to actively pursue this avenue directly without further insight is hard to make.
+
+While if multiple groups were used the data could be gathered more quickly,due to limitations in predicting appropriate sample sizes on non-normally distributed data, while this may still be worth pursuing, similar to the unsubscribe rate, and likely even more so, domain experts should be referenced, along with further analysis of ordering patterns in order to identify whether patterns may correspond to normal ordering days (i.e. many customers order their big regular orders on Monday mornings, or first Monday of the month, and they restock the products they sold during the week on Fridays), rather than the direct 1:1 relationship of emails/marketing to ordering day.
+
+In conclusion, the null hypothesis is not rejected at the 0.05 significance level, data has significant outliers, especially on Mondays. Maybe need to control for typical ordering patterns pre-campaign to avoid just ‘discovering’ standard business practices. Data is not normally distributed so non parametric tests used.
